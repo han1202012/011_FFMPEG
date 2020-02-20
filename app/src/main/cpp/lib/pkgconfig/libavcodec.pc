@@ -1,0 +1,14 @@
+prefix=./android/armeabi-v7a
+exec_prefix=${prefix}
+libdir=./android/armeabi-v7a/lib
+includedir=./android/armeabi-v7a/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 58.18.100
+Requires: libswresample >= 3.1.100, libavutil >= 56.14.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavcodec -pthread -lm -lz
+Libs.private: 
+Cflags: -I${includedir}
