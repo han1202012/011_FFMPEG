@@ -1,17 +1,20 @@
 #include <jni.h>
 #include <string>
+#include "FFMPEG.h"
 
-// 注意 FFMPEG 是 C 开发的 , 在 C++ 中使用需要使用 extern "C" 进行兼容
-extern "C"{
-#include <libavcodec/avcodec.h>
-}
+//声明 FFMPEG 类
+FFMPEG *ffmpeg = 0;
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_kim_hsl_ffmpeg_Player_native_1prepare(JNIEnv *env, jobject instance, jstring dataSource_) {
+
+    //Java 中传入的视频直播流地址 , "rtmp://live.hkstv.hk.lxdns.com/live/hks"
+    const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
+
+    //在 FFMPEG.cpp 中声明的构造函数
+    ffmpeg = new FFMPEG(dataSource);
 
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_kim_hsl_ffmpeg_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
-
-    return env->NewStringUTF(av_version_info());
+    env->ReleaseStringUTFChars(dataSource_, dataSource);
 }
