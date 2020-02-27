@@ -15,6 +15,9 @@ Java_kim_hsl_ffmpeg_Player_native_1prepare(JNIEnv *env, jobject instance, jstrin
     //在 FFMPEG.cpp 中声明的构造函数
     ffmpeg = new FFMPEG(dataSource);
 
+    //播放器准备 , 调用 ffmpeg 指针指向的类对象的 prepare() 方法
+    ffmpeg->prepare();
+
 
     env->ReleaseStringUTFChars(dataSource_, dataSource);
 }
