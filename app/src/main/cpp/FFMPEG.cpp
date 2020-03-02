@@ -44,6 +44,14 @@ void* pthread_prepare(void* args){
 //实际的准备方法
 void FFMPEG::_prepare() {
 
+    /*
+     * 初始化网络 :
+     *      默认状态下 , FFMPEG 是不允许联网的
+     *      必须调用该函数 , 初始化网络后才能进行联网
+     */
+    avformat_network_init();
+
+
     //0 . 注册组件
     //      如果是 4.x 之前的版本需要执行该步骤
     //      4.x 及之后的版本 , 就没有该步骤了
@@ -56,9 +64,16 @@ void FFMPEG::_prepare() {
     //                              该参数是 二级指针 , 意味着在方法中会修改该指针的指向 ,
     //                              该参数的实际作用是当做返回值用的
     //      const char *url :   视频资源地址, 文件地址 / 网络链接
+    //  返回值说明 : 返回 0 , 代表打开成功 , 否则失败
+    //              失败的情况 : 文件路径错误 , 网络错误
     //int avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options);
     formatContext = 0;
-    avformat_open_input(&formatContext, dataSource, 0, 0);
+    int open_result = avformat_open_input(&formatContext, dataSource, 0, 0);
+
+    //如果返回值不是 0 , 说明打开视频文件失败 , 需要将错误信息在 Java 层进行提示
+    if(open_result){
+
+    }
 
 }
 

@@ -1,5 +1,6 @@
 package kim.hsl.ffmpeg;
 
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -7,6 +8,8 @@ import android.view.SurfaceView;
  * Java 层与 Native 层交互 接口
  */
 public class Player implements SurfaceHolder.Callback {
+
+    private static final String TAG = "Player";
 
     // 加载动态库
     static {
@@ -74,6 +77,12 @@ public class Player implements SurfaceHolder.Callback {
 
     }
 
+
+    public void onError(int errorCode){
+        Log.i(TAG, "出现错误 错误码 : " + errorCode);
+    }
+
+
     public SurfaceView getSurfaceView() {
         return surfaceView;
     }
@@ -85,10 +94,6 @@ public class Player implements SurfaceHolder.Callback {
         this.surfaceHolder = this.surfaceView.getHolder();
         surfaceHolder.addCallback(this);
     }
-
-
-
-
 
 
     @Override
