@@ -3,6 +3,7 @@ package kim.hsl.ffmpeg;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "FFMPEG";
 
     /**
      * 视频显示组件
@@ -33,11 +35,18 @@ public class MainActivity extends AppCompatActivity {
         //创建播放器
         player = new Player();
 
+        //设置视频显示组件
+        player.setSurfaceView(surfaceView);
+
         //这个是香港卫视直播地址
         player.setDataSource("rtmp://live.hkstv.hk.lxdns.com/live/hks");
 
-        //设置视频显示组件
-        player.setSurfaceView(surfaceView);
+        player.setOnPrepareListener(new Player.OnPrepareListener() {
+            @Override
+            public void onPrepare() {
+                Log.i(TAG, "准备完毕");
+            }
+        });
 
     }
 

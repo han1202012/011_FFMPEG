@@ -11,7 +11,9 @@ add_library( # 参数 1 : 设置生成的动态库名称
         # 参数 3 : 配置要编译的源文件
         native-lib.cpp
         FFMPEG.cpp
-        JavaCallHelper.cpp)
+        JavaCallHelper.cpp
+        AudioChannel.cpp
+        VideoChannel.cpp)
 
 # III . 到预设的目录查找 log 库 , 将找到的路径赋值给 log-lib
 #       这个路径是 NDK 的 ndk-bundle\platforms\android-29\arch-arm\usr\lib\liblog.so
@@ -46,12 +48,17 @@ target_link_libraries(
         native-lib
 
         # FFMPEG 静态库
-        avcodec
+        # 注意这些库的顺序必须按照如下进行 , 否则会报错
         avfilter
         avformat
+        avcodec
         avutil
         swresample
         swscale
 
         # 日志库
-        ${log-lib})
+        ${log-lib}
+
+        #FFMPEG 使用到了 libz 库 , 没有会报错
+        z
+)

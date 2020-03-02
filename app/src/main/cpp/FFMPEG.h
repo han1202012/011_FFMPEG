@@ -7,12 +7,18 @@
 
 #include <pthread.h>
 #include <cstring>
+#include <android/log.h>
+#include "JavaCallHelper.h"
+#include "AudioChannel.h"
+#include "VideoChannel.h"
 
 // 注意 FFMPEG 是 C 开发的 , 在 C++ 中使用需要使用 extern "C" 进行兼容
 extern "C"{
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
+
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"FFMPEG",__VA_ARGS__)
 
 //封装对视频的操作
 class FFMPEG {
@@ -21,7 +27,7 @@ class FFMPEG {
 public: //类中默认都是私有的, 如果共有需要指定 public
 
     //构造函数
-    FFMPEG(const char* dataSource);
+    FFMPEG(JavaCallHelper *callHelper, const char* dataSource);
 
     //析构函数
     ~FFMPEG();
@@ -39,6 +45,14 @@ private:
     pthread_t pid;
 
     AVFormatContext *formatContext;
+
+    JavaCallHelper *callHelper;
+
+    //解析音频流
+    AudioChannel *audioChannel;
+
+    //解析视频流
+    VideoChannel *videoChannel;
 
 };
 

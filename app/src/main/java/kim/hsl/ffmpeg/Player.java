@@ -31,6 +31,11 @@ public class Player implements SurfaceHolder.Callback {
      */
     private SurfaceHolder surfaceHolder;
 
+    /**
+     * 准备回调接口
+     */
+    private OnPrepareListener onPrepareListener;
+
     public String getDataSource() {
         return dataSource;
     }
@@ -78,8 +83,39 @@ public class Player implements SurfaceHolder.Callback {
     }
 
 
+    /**
+     * C++ 层错误回调函数
+     * @param errorCode
+     */
     public void onError(int errorCode){
         Log.i(TAG, "出现错误 错误码 : " + errorCode);
+    }
+
+    /**
+     * C++ 中 prepare 时回调该方法
+     */
+    public void onPrepare(){
+
+        Log.i(TAG, "准备完毕 onPrepare");
+
+        if(onPrepareListener != null){
+            onPrepareListener.onPrepare();
+        }
+    }
+
+    /**
+     * 设置准备回调接口
+     * @param onPrepareListener
+     */
+    public void setOnPrepareListener(OnPrepareListener onPrepareListener){
+        this.onPrepareListener = onPrepareListener;
+    }
+
+    /**
+     * 定义准备回调接口
+     */
+    public interface OnPrepareListener{
+        void onPrepare();
     }
 
 

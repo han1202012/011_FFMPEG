@@ -5,7 +5,7 @@
 #include "FFMPEG.h"
 
 //构造方法
-FFMPEG::FFMPEG(const char *dataSource) {
+FFMPEG::FFMPEG(JavaCallHelper *callHelper, const char *dataSource) {
 
     //拷贝一份 dataSource 字符串 , 因为该参数中传入的字符串后面可能会被回收
     int strlength = strlen(dataSource);
@@ -16,7 +16,8 @@ FFMPEG::FFMPEG(const char *dataSource) {
     //拷贝字符串
     strcpy(this->dataSource, dataSource);
 
-
+    //Java 反射调用类
+    this->callHelper = callHelper;
 
 }
 
@@ -24,6 +25,7 @@ FFMPEG::~FFMPEG() {
 
     //释放字符串成员变量 , 防止 dataSource 指向的内存出现泄漏
     delete dataSource;
+    delete callHelper;
 
 }
 
@@ -66,15 +68,118 @@ void FFMPEG::_prepare() {
     //      const char *url :   视频资源地址, 文件地址 / 网络链接
     //  返回值说明 : 返回 0 , 代表打开成功 , 否则失败
     //              失败的情况 : 文件路径错误 , 网络错误
-    //int avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options);
+    //int avformat_open_input(AVFormatContext **ps, const char *url,
+    //                          AVInputFormat *fmt, AVDictionary **options);
     formatContext = 0;
     int open_result = avformat_open_input(&formatContext, dataSource, 0, 0);
 
     //如果返回值不是 0 , 说明打开视频文件失败 , 需要将错误信息在 Java 层进行提示
-    if(open_result){
+    //  这里将错误码返回到 Java 层显示即可
+    if(open_result != 0){
+        __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "打开媒体失败 : %s", av_err2str(open_result));
+        callHelper->onError(pid, 0);
+    }
+
+
+
+    //2 . 查找媒体 地址 对应的音视频流
+    //      方法原型 : int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options);
+    //      调用该方法后 , AVFormatContext 结构体的 nb_streams 元素就有值了 ,
+    //      该值代表了音视频流 AVStream 个数
+    int find_result = avformat_find_stream_info(formatContext, 0);
+
+    //如果返回值 < 0 , 说明查找音视频流失败 , 需要将错误信息在 Java 层进行提示
+    //  这里将错误码返回到 Java 层显示即可
+    if(find_result < 0){
+        __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "查找媒体流失败 : %s", av_err2str(find_result));
+        callHelper->onError(pid, 1);
+    }
+
+
+    //formatContext->nb_streams 是 音频流 / 视频流 个数 ;
+    for(int i = 0; i < formatContext->nb_streams; i ++){
+
+        //取出一个媒体流 ( 视频流 / 音频流 )
+        AVStream *stream = formatContext->streams[i];
+
+        //解码这个媒体流的参数信息 , 包含 码率 , 宽度 , 高度 , 采样率 等参数信息
+        AVCodecParameters *codecParameters = stream->codecpar;
+
+        //视频 / 音频 处理需要的操作 ( 获取解码器 )
+
+        //查找 当前流 使用的编码方式 , 进而查找解码器 ( 可能失败 , 不支持的解码方式 )
+        AVCodec *avCodec = avcodec_find_decoder(codecParameters->codec_id);
+
+        //① 查找失败处理
+        if(avCodec == NULL){
+            //如果没有找到解码器 , 回调失败 , 方法直接返回 , 后续代码不执行
+            callHelper->onError(pid, 2);
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "查找 解码器 失败");
+            return;
+        }
+
+        //② 获取解码器上下文
+        AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
+
+        //获取解码器失败处理
+        if(avCodecContext == NULL){
+            callHelper->onError(pid, 3);
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "创建解码器上下文 失败");
+            return;
+        }
+
+        //③ 设置 解码器上下文 参数
+        //      int avcodec_parameters_to_context(AVCodecContext *codec,
+        //              const AVCodecParameters *par);
+        //      返回值 > 0 成功 , < 0 失败
+        int parameters_to_context_result =
+                avcodec_parameters_to_context(avCodecContext, codecParameters);
+
+        //设置 解码器上下文 参数 失败处理
+        if(parameters_to_context_result < 0){
+            callHelper->onError(pid, 4);
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "设置解码器上下文参数 失败");
+            return;
+        }
+
+        //④ 打开编码器
+        //   int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
+        //   返回 0 成功 , 其它失败
+        int open_codec_result = avcodec_open2(avCodecContext, avCodec, 0);
+
+        //打开编码器 失败处理
+        if(open_codec_result != 0){
+            callHelper->onError(pid, 5);
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "打开 解码器 失败");
+            return;
+        }
+
+
+
+        //一般情况下 , 视频直播流只包含 视频流 和 音频流
+        if(codecParameters->codec_type == AVMEDIA_TYPE_AUDIO){
+
+            //音频
+            audioChannel = new AudioChannel;
+
+        }else if(codecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
+
+            //视频
+            videoChannel = new VideoChannel;
+
+        }
 
     }
 
+    //没有音视频 , 向 Java 层报错
+    if(!audioChannel && !videoChannel){
+        callHelper->onError(pid, 6);
+        __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "没有找到媒体流");
+        return;
+    }
+
+    //准备完毕 , 此时可以通知 Java 层开始播放 , 2 代表子线程
+    callHelper->onPrepare(2);
 }
 
 //播放器准备方法

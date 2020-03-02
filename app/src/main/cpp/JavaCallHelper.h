@@ -19,6 +19,12 @@ public:
     //析构方法
     ~JavaCallHelper();
 
+    //错误回调方法 , 通过该方法回调错误信息给 Java 层
+    void onError(int thread, int errorCode);
+
+    //准备回调方法
+    void onPrepare(int thread);
+
 private:
 
     /*
@@ -29,6 +35,13 @@ private:
      */
     JavaVM *vm;
     JNIEnv *env;
+    jobject instance;
+
+    //onError 方法对应的 方法 ID
+    jmethodID onErrorId;
+
+    //onPrepare 方法对应的 方法 ID
+    jmethodID onPrepareId;
 
 };
 
