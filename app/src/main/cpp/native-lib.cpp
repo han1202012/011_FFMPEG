@@ -30,6 +30,6 @@ Java_kim_hsl_ffmpeg_Player_native_1prepare(JNIEnv *env, jobject instance, jstrin
     //播放器准备 , 调用 ffmpeg 指针指向的类对象的 prepare() 方法
     ffmpeg->prepare();
 
-
+    //释放字符串
     env->ReleaseStringUTFChars(dataSource_, dataSource);
 }

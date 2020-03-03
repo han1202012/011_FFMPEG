@@ -49,7 +49,7 @@ void FFMPEG::_prepare() {
     /*
      * 初始化网络 :
      *      默认状态下 , FFMPEG 是不允许联网的
-     *      必须调用该函数 , 初始化网络后才能进行联网
+     *      必须调用该函数 , 初始化网络后 FFMPEG 才能进行联网
      */
     avformat_network_init();
 
@@ -59,7 +59,7 @@ void FFMPEG::_prepare() {
     //      4.x 及之后的版本 , 就没有该步骤了
     //av_register_all();
 
-    //1 . 打开音视频地址
+    //1 . 打开音视频地址 ( 播放文件前 , 需要先将文件打开 )
     //      地址类型 : ① 文件类型 , ② 音视频流
     //  参数解析 :
     //      AVFormatContext **ps :  封装了文件格式相关信息的结构体 , 如视频宽高 , 音频采样率等信息 ;
@@ -82,7 +82,7 @@ void FFMPEG::_prepare() {
 
 
 
-    //2 . 查找媒体 地址 对应的音视频流
+    //2 . 查找媒体 地址 对应的音视频流 ( 给 AVFormatContext* 成员赋值 )
     //      方法原型 : int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options);
     //      调用该方法后 , AVFormatContext 结构体的 nb_streams 元素就有值了 ,
     //      该值代表了音视频流 AVStream 个数
@@ -97,6 +97,7 @@ void FFMPEG::_prepare() {
 
 
     //formatContext->nb_streams 是 音频流 / 视频流 个数 ;
+    //  循环解析 视频流 / 音频流 , 一般是两个 , 一个视频流 , 一个音频流
     for(int i = 0; i < formatContext->nb_streams; i ++){
 
         //取出一个媒体流 ( 视频流 / 音频流 )

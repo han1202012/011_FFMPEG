@@ -49,6 +49,7 @@ target_link_libraries(
 
         # FFMPEG 静态库
         # 注意这些库的顺序必须按照如下进行 , 否则会报错
+        #   这些库之间有依赖的关系 , 必须按照顺序加载库 , 如 avcodec 内部依赖 avformat 库
         avfilter
         avformat
         avcodec
@@ -60,5 +61,9 @@ target_link_libraries(
         ${log-lib}
 
         #FFMPEG 使用到了 libz 库 , 没有会报错
+        #   FFMPEG 对于 z 的依赖是以动态库的形式进行的
+        #   如果 FFMPEG 是动态库 , 那么可以不链接这个库 , 可以运行时链接这个库
+        #   当前 FFMPEG 是静态库 , 需要在编译时将这个库打包到静态库中
+        #   推荐使用静态库 , 静态库打包出来的库比动态库小很多 , 一倍左右
         z
 )
