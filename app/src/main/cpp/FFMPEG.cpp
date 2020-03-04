@@ -106,52 +106,52 @@ void FFMPEG::_prepare() {
         //解码这个媒体流的参数信息 , 包含 码率 , 宽度 , 高度 , 采样率 等参数信息
         AVCodecParameters *codecParameters = stream->codecpar;
 
-        //视频 / 音频 处理需要的操作 ( 获取解码器 )
+        //视频 / 音频 处理需要的操作 ( 获取编解码器 )
 
-        //查找 当前流 使用的编码方式 , 进而查找解码器 ( 可能失败 , 不支持的解码方式 )
+        //① 查找 当前流 使用的编码方式 , 进而查找编解码器 ( 可能失败 , 不支持的解码方式 )
         AVCodec *avCodec = avcodec_find_decoder(codecParameters->codec_id);
 
-        //① 查找失败处理
+        //查找失败处理
         if(avCodec == NULL){
-            //如果没有找到解码器 , 回调失败 , 方法直接返回 , 后续代码不执行
+            //如果没有找到编解码器 , 回调失败 , 方法直接返回 , 后续代码不执行
             callHelper->onError(pid, 2);
-            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "查找 解码器 失败");
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "查找 编解码器 失败");
             return;
         }
 
-        //② 获取解码器上下文
+
         AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
 
-        //获取解码器失败处理
-        if(avCodecContext == NULL){
+        //获取编解码器失败处理
+        if(avCodecContext == NULL){//② 获取编解码器上下文
             callHelper->onError(pid, 3);
-            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "创建解码器上下文 失败");
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "创建编解码器上下文 失败");
             return;
         }
 
-        //③ 设置 解码器上下文 参数
+        //③ 设置 编解码器上下文 参数
         //      int avcodec_parameters_to_context(AVCodecContext *codec,
         //              const AVCodecParameters *par);
         //      返回值 > 0 成功 , < 0 失败
         int parameters_to_context_result =
                 avcodec_parameters_to_context(avCodecContext, codecParameters);
 
-        //设置 解码器上下文 参数 失败处理
+        //设置 编解码器上下文 参数 失败处理
         if(parameters_to_context_result < 0){
             callHelper->onError(pid, 4);
-            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "设置解码器上下文参数 失败");
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "设置编解码器上下文参数 失败");
             return;
         }
 
-        //④ 打开编码器
+        //④ 打开编解码器
         //   int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
         //   返回 0 成功 , 其它失败
         int open_codec_result = avcodec_open2(avCodecContext, avCodec, 0);
 
-        //打开编码器 失败处理
+        //打开编解码器 失败处理
         if(open_codec_result != 0){
             callHelper->onError(pid, 5);
-            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "打开 解码器 失败");
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "打开 编解码器 失败");
             return;
         }
 
