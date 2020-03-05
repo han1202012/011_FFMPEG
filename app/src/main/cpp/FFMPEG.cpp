@@ -164,12 +164,12 @@ void FFMPEG::_prepare() {
         if(codecParameters->codec_type == AVMEDIA_TYPE_AUDIO){
 
             //音频
-            audioChannel = new AudioChannel;
+            audioChannel = new AudioChannel(i);
 
         }else if(codecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
 
             //视频
-            videoChannel = new VideoChannel;
+            videoChannel = new VideoChannel(i);
 
         }
 
@@ -239,19 +239,69 @@ void FFMPEG::_start() {
         //创建 AVPacket 空数据包
         AVPacket *avPacket = av_packet_alloc();
 
-        //读取数据包 , 并存储到 AVPacket 数据包中
-        //参数分析 : 一维指针 与 二维指针 参数分析
-        //  ① 注意 : 第二个参数是 AVPacket * 类型的 , 那么传入 AVPacket *avPacket 变量
-        //        不能修改 avPacket 指针的指向 , 即该指针指向的结构体不能改变
-        //        只能修改 avPacket 指向的结构体中的元素的值
-        //          因此 , 传入的 avPacket 结构体指针必须先进行初始化 , 然后再传入
-        //              av_read_frame 函数内 , 没有修改 AVPacket *avPacket 的值 , 但是修改了结构体中元素的值
-        //  ② 与此相对应的是 avformat_open_input 方法 , 传入 AVFormatContext ** 二维指针
-        //      传入的的 AVFormatContext ** 是没有经过初始化的 , 连内存都没有分配
-        //      在 avformat_open_input 方法中创建并初始化 AVFormatContext * 结构体指针
-        //      然后将该指针地址赋值给 AVFormatContext **
-        //          avformat_open_input 函数内修改了 AVFormatContext ** 参数的值
-        av_read_frame(formatContext, avPacket);
+        /*
+            读取数据包 , 并存储到 AVPacket 数据包中
+
+            参数分析 : 一维指针 与 二维指针 参数分析
+              ① 注意 : 第二个参数是 AVPacket * 类型的 , 那么传入 AVPacket *avPacket 变量
+                    不能修改 avPacket 指针的指向 , 即该指针指向的结构体不能改变
+                    只能修改 avPacket 指向的结构体中的元素的值
+                      因此 , 传入的 avPacket 结构体指针必须先进行初始化 , 然后再传入
+                          av_read_frame 函数内 , 没有修改 AVPacket *avPacket 的值 , 但是修改了结构体中元素的值
+              ② 与此相对应的是 avformat_open_input 方法 , 传入 AVFormatContext ** 二维指针
+                  传入的的 AVFormatContext ** 是没有经过初始化的 , 连内存都没有分配
+                  在 avformat_open_input 方法中创建并初始化 AVFormatContext * 结构体指针
+                  然后将该指针地址赋值给 AVFormatContext **
+                      avformat_open_input 函数内修改了 AVFormatContext ** 参数的值
+            返回值 0 说明读取成功 , 小于 0 说明读取失败 , 或者 读取完毕
+         */
+        int read_frame_result = av_read_frame(formatContext, avPacket);
+
+        /*
+            返回值处理 :
+                如果返回值 == 0 , 说明读取成功 ;
+                如果返回值 < 0 , 有两种情况 , 失败 或者 读取完毕 , 这两种情况要分别处理
+         */
+        if(read_frame_result == 0){
+
+            //读取成功
+
+            /*
+                之前有记录每个 音视频流的属性
+                    在遍历 formatContext->nb_streams 音视频流 (AVStream *) 结构体指针数组时
+                    可以将每个序号索引对应的流的属性记录下来
+
+                判定时注意 : 确保 音频流解析器 audioChannel 和 视频流解析器 videoChannel 不为空
+                            然后再根据其 音 / 视 频流 ID 索引 判定该读取的帧数据是什么类型的数据
+             */
+            if(audioChannel && avPacket->stream_index == audioChannel->id){
+
+                //音频流
+
+            }else if(videoChannel && avPacket->stream_index == videoChannel->id){
+
+                //视频流处理
+
+                //将读取的视频数据帧存储到队列中
+                videoChannel->avPackets.push(avPacket);
+
+            }
+
+
+        }else if(read_frame_result == AVERROR_EOF){
+
+            //读取完毕 , 但是当前还没有播放完毕
+
+
+        }else{
+
+            callHelper->onError(pid, 5);
+            __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "打开 编解码器 失败");
+            return;
+
+        }
+
+
 
     }
 

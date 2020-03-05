@@ -6,7 +6,11 @@
 #define INC_011_FFMPEG_VIDEOCHANNEL_H
 
 
-class VideoChannel {
+#include "BaseChannel.h"
+
+class VideoChannel : BaseChannel {
+public:
+    VideoChannel(int id);
 
 };
 

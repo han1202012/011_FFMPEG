@@ -3,3 +3,5 @@
 //
 
 #include "AudioChannel.h"
+
+AudioChannel::AudioChannel(int id) : BaseChannel(id) {}
