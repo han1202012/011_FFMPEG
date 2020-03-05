@@ -49,6 +49,9 @@ public class Player implements SurfaceHolder.Callback {
      */
     public void start(){
 
+        //调用 Native 的本地方法
+        native_start();
+
     }
 
     /**
@@ -154,6 +157,7 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     native void native_prepare(String dataSource);
+    native void native_start();
 
 
 }

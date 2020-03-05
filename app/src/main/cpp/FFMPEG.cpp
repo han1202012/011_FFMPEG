@@ -8,7 +8,9 @@
 FFMPEG::FFMPEG(JavaCallHelper *callHelper, const char *dataSource) {
 
     //拷贝一份 dataSource 字符串 , 因为该参数中传入的字符串后面可能会被回收
-    int strlength = strlen(dataSource);
+    //  注意 strlen 获取字符串长度 , 其中不包括最后的 '\0' 结尾 , C/C++ 字符串必须包括该 '\0' 作为结尾
+    //  拷贝时必须拷贝 strlen(dataSource) + 1 个字节的字符串 , 才能保证字符串完整
+    int strlength = strlen(dataSource) + 1;
 
     //赋值给成员变量
     this->dataSource = new char[strlength];
@@ -120,10 +122,11 @@ void FFMPEG::_prepare() {
         }
 
 
+        //② 获取编解码器上下文
         AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
 
         //获取编解码器失败处理
-        if(avCodecContext == NULL){//② 获取编解码器上下文
+        if(avCodecContext == NULL){
             callHelper->onError(pid, 3);
             __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "创建编解码器上下文 失败");
             return;
@@ -189,5 +192,45 @@ void FFMPEG::prepare() {
     //创建线程进行准备工作
     //  在线程中进行音视频文件或文件流解析
     pthread_create(&pid, 0, pthread_prepare, this);
+
+}
+
+
+//播放音视频
+void* play(void* args){
+
+    //将线程方法参数转为 FFMPEG * 对象 , 并调用 FFMPEG 对象的 _start() 方法
+    FFMPEG *ffmpeg = static_cast<FFMPEG *>(args);
+    ffmpeg->_start();
+
+    //子线程方法 , 一定要 return 0 , 否则出现很难查找的错误
+    return 0;
+}
+
+
+//开始播放方法
+void FFMPEG::start() {
+
+    /*
+        本方法主要工作 : 解码
+
+        这里要注意线程 : 要考虑该方法在主线程调用 , 子线程调用两种情况 , 必须考虑在不同的线程调用方法的情况
+     */
+
+    //设置当前正在播放
+    isPlaying = 1;
+
+    //将线程 ID 存储到 pid_play 成员变量中 , 调用 void* play(void* args) 方法作为线程的执行内容
+    //      传入 this 对象作为线程函数的参数 , 使用static_cast 可以将该参数强转为 FFMPEG 对象
+    pthread_create(&pid_play, 0, play , this);
+
+}
+
+void FFMPEG::_start() {
+
+    //1 . 读取音视频数据包
+
+
+    //2 . 解码
 
 }

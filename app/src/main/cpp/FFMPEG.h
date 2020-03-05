@@ -34,25 +34,39 @@ public: //类中默认都是私有的, 如果共有需要指定 public
 
     //播放器准备方法
     void prepare();
-
+    //子线程中调用该方法 , 目的是可以在该方法中随意调用 FFMPEG 类对象的成员变量
     void _prepare();
+
+    //播放器开始播放方法
+    void start();
+    //子线程中调用该方法 , 目的是可以在该方法中随意调用 FFMPEG 类对象的成员变量
+    void _start();
+
 private:
 
     //保存数据源
     char* dataSource;
 
-    //子线程id
+    //准备子线程 ID
     pthread_t pid;
+
+    //播放子线程 ID
+    pthread_t pid_play;
 
     AVFormatContext *formatContext;
 
     JavaCallHelper *callHelper;
 
+    //注意 : 声明指针变量时 , 需要给一个默认值 , 尽量减少出现错误的几率
+
     //解析音频流
-    AudioChannel *audioChannel;
+    AudioChannel *audioChannel = 0;
 
     //解析视频流
-    VideoChannel *videoChannel;
+    VideoChannel *videoChannel = 0;
+
+    //记录当前是否正在进行播放
+    bool isPlaying;
 
 };
 

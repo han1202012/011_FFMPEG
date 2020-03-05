@@ -60,6 +60,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPrepare() {
                 Log.i(TAG, "准备完毕");
+
+                //开始播放
+                player.start();
             }
         });
 

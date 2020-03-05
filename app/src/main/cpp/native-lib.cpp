@@ -34,3 +34,12 @@ Java_kim_hsl_ffmpeg_Player_native_1prepare(JNIEnv *env, jobject instance, jstrin
     //释放字符串
     env->ReleaseStringUTFChars(dataSource_, dataSource);
 }
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_kim_hsl_ffmpeg_Player_native_1start(JNIEnv *env, jobject instance) {
+
+    //调用本地 ffmpeg 播放器的 start() 方法
+    ffmpeg->start();
+}
