@@ -229,6 +229,19 @@ void FFMPEG::start() {
 void FFMPEG::_start() {
 
     //1 . 读取音视频数据包
+    //      如果当前是正在播放状态 , 那么不停的读取数据包 , 并解码
+    while (isPlaying){
+
+        //读取数据包
+        // AVPacket 存放编码后的音视频数据的 , 获取该数据包后 , 需要对该数据进行解码 , 解码后将数据存放在 AVFrame 中
+        // AVPacket 是编码后的数据 , AVFrame 是编码前的数据
+
+        //创建 AVPacket 空数据包
+        AVPacket *avPacket = av_packet_alloc();
+        //读取数据包 , 并存储到 AVPacket 数据包中
+        av_read_frame(formatContext, avPacket);
+
+    }
 
 
     //2 . 解码
