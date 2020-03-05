@@ -238,7 +238,19 @@ void FFMPEG::_start() {
 
         //创建 AVPacket 空数据包
         AVPacket *avPacket = av_packet_alloc();
+
         //读取数据包 , 并存储到 AVPacket 数据包中
+        //参数分析 : 一维指针 与 二维指针 参数分析
+        //  ① 注意 : 第二个参数是 AVPacket * 类型的 , 那么传入 AVPacket *avPacket 变量
+        //        不能修改 avPacket 指针的指向 , 即该指针指向的结构体不能改变
+        //        只能修改 avPacket 指向的结构体中的元素的值
+        //          因此 , 传入的 avPacket 结构体指针必须先进行初始化 , 然后再传入
+        //              av_read_frame 函数内 , 没有修改 AVPacket *avPacket 的值 , 但是修改了结构体中元素的值
+        //  ② 与此相对应的是 avformat_open_input 方法 , 传入 AVFormatContext ** 二维指针
+        //      传入的的 AVFormatContext ** 是没有经过初始化的 , 连内存都没有分配
+        //      在 avformat_open_input 方法中创建并初始化 AVFormatContext * 结构体指针
+        //      然后将该指针地址赋值给 AVFormatContext **
+        //          avformat_open_input 函数内修改了 AVFormatContext ** 参数的值
         av_read_frame(formatContext, avPacket);
 
     }
