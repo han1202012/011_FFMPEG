@@ -220,6 +220,17 @@ void FFMPEG::start() {
     //设置当前正在播放
     isPlaying = 1;
 
+    //设置 音 / 视频 AVPacket * 队列工作状态
+    //  注意判空
+    if(videoChannel){
+        videoChannel->avPackets.setWork(1);
+    }
+
+    if(audioChannel){
+        audioChannel->avPackets.setWork(1);
+    }
+
+
     //将线程 ID 存储到 pid_play 成员变量中 , 调用 void* play(void* args) 方法作为线程的执行内容
     //      传入 this 对象作为线程函数的参数 , 使用static_cast 可以将该参数强转为 FFMPEG 对象
     pthread_create(&pid_play, 0, play , this);

@@ -8,9 +8,30 @@
 
 #include "BaseChannel.h"
 
+/**
+ * 主要工作 : 解码视频 , 并播放视频
+ */
 class VideoChannel : BaseChannel {
 public:
     VideoChannel(int id);
+
+    /**
+     * 解码并播放视频
+     */
+    void play();
+
+    /**
+     * 解码操作
+     */
+    void decode();
+
+
+private:
+
+    /**
+     * 解码操作 所在的线程 id
+     */
+    pthread_t pid_decode;
 
 };
 

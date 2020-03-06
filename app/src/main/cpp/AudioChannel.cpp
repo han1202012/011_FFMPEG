@@ -4,4 +4,14 @@
 
 #include "AudioChannel.h"
 
-AudioChannel::AudioChannel(int id) : BaseChannel(id) {}
+AudioChannel::AudioChannel(int id) : BaseChannel(id) {
+
+}
+
+
+/**
+ * 解码 并 播放音频
+ */
+void AudioChannel::play() {
+
+}

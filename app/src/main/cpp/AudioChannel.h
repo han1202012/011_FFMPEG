@@ -12,7 +12,10 @@ class AudioChannel : public BaseChannel {
 public:
     AudioChannel(int id);
 
-
+    /**
+     * 解码并播放音频
+     */
+    void play();
 };
 
 

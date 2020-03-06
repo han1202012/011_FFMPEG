@@ -13,21 +13,46 @@ using namespace std;
  */
 template<typename T>
 class SafeQueue {
+
+    /**
+     * 定义 线程安全队列 元素释放时回调的函数类型
+     */
     typedef void (*ReleaseHandle)(T &);
 
+    /**
+     * 定义 线程安全队列 同步方法 函数类型
+     */
     typedef void (*SyncHandle)(queue<T> &);
 
 public:
+    /**
+     * 构造方法
+     *
+     * 初始线程互斥锁
+     * 初始化条件变量
+     */
     SafeQueue() {
+
         pthread_mutex_init(&mutex, NULL);
         pthread_cond_init(&cond, NULL);
+
     }
 
+    /**
+     * 析构方法
+     *
+     * 销毁线程互斥锁
+     * 销毁线程条件变量
+     */
     ~SafeQueue() {
         pthread_cond_destroy(&cond);
         pthread_mutex_destroy(&mutex);
     }
 
+    /**
+     * 向线程安全队列中添加元素
+     * @param new_value
+     */
     void push(const T new_value) {
 
         pthread_mutex_lock(&mutex);
@@ -41,22 +66,39 @@ public:
     }
 
 
-    int pop(T& value) {
+    /**
+     * 从线程安全队列中取出元素
+     *
+     *      该方法中需要修改 元素指针指向 , 这里的参数是引用参数
+     *
+     *
+     * @param value
+     * @return
+     */
+    int pop(T &value) {
+
+        //用于记录是否成功取出数据 , 有特殊情况 , 线程没有阻塞住 , 取出了 NULL 数据
+        //  如果成功取出数据 返回值设置为 , 反之为 0
         int ret = 0;
 
-
+        //加互斥锁
         pthread_mutex_lock(&mutex);
 
         //工作的标志为 1 , 并且当前队列为空 , 开始等待
+        //  如果没有数据 , 那么线程阻塞等待
         while (work && q.empty()) {
+            //线程阻塞等待新的数据被放入后 , 解除阻塞
             pthread_cond_wait(&cond, &mutex);
         }
 
+        //正常情况下 , 如果线程不为空 , 取出数据
         if (!q.empty()) {
             value = q.front();
             q.pop();
             ret = 1;
         }
+
+        //解开互斥锁
         pthread_mutex_unlock(&mutex);
 
         return ret;
@@ -69,8 +111,10 @@ public:
     void setWork(int work) {
 
         pthread_mutex_lock(&mutex);
+
         this->work = work;
         pthread_cond_signal(&cond);
+
         pthread_mutex_unlock(&mutex);
 
     }
