@@ -16,7 +16,7 @@ public:
     VideoChannel(int id);
 
     /**
-     * 解码并播放视频
+     * 解码并播放视频 1
      */
     void play();
 
