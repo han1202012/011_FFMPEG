@@ -89,7 +89,8 @@ void show(uint8_t *data, int linesize, int width, int height){
 
     }
 
-
+    //启动绘制
+    ANativeWindow_unlockAndPost(aNativeWindow);
 
     //解除同步锁
     pthread_mutex_unlock(&mutex);
