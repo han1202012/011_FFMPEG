@@ -66,4 +66,7 @@ target_link_libraries(
         #   当前 FFMPEG 是静态库 , 需要在编译时将这个库打包到静态库中
         #   推荐使用静态库 , 静态库打包出来的库比动态库小很多 , 一倍左右
         z
+
+        #在 Native 层使用 ANativeWindow 进行原生绘制时 , 需要链接 libandroid.so 库
+        android
 )

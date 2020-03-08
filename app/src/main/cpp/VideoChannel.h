@@ -9,11 +9,26 @@
 #include "BaseChannel.h"
 
 /**
+ * 定义函数指针
+ * 参数是解码后的图像信息
+ *  uint8_t *dst_data[4];
+ *  int dst_linesize[4];
+ *
+ *  后两个参数是图像的宽度和高度
+ */
+typedef void (*ShowFrameCallback)(uint8_t *, int, int, int);
+
+
+/**
  * 主要工作 : 解码视频 , 并播放视频
  */
-class VideoChannel : BaseChannel {
+class VideoChannel : public BaseChannel {
 public:
-    VideoChannel(int id);
+
+
+    VideoChannel(int id, AVCodecContext *avCodecContext);
+
+    ~VideoChannel();
 
     /**
      * 解码并播放视频 1
@@ -25,6 +40,19 @@ public:
      */
     void decode();
 
+    /**
+     * 显示操作
+     */
+    void show();
+
+    /**
+     * 设置图像绘制函数指针
+     * @param callback
+     */
+    void setShowFrameCallback(ShowFrameCallback callback);
+
+
+
 
 private:
 
@@ -32,6 +60,27 @@ private:
      * 解码操作 所在的线程 id
      */
     pthread_t pid_decode;
+
+    /**
+     * 绘制线程
+     */
+    pthread_t pid_show;
+
+    /**
+     * 保存解码后的图像
+     *      绘制线程中一直读取并绘制该图像
+     */
+    SafeQueue<AVFrame *> avFrames;
+
+    /**
+     * 用于图像像素格式转换 YUV -> RGBA
+     */
+    SwsContext *swsContext = 0;
+
+    /**
+     * 图像绘制回调函数 函数指针
+     */
+    ShowFrameCallback callback;
 
 };
 

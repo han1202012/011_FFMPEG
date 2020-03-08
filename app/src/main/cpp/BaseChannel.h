@@ -12,6 +12,11 @@ extern "C"{
 #include <libavcodec/avcodec.h>
 };
 
+//导入转换图像格式的库 SwsContext 定义在该库中
+extern "C"{
+#include <libswscale/swscale.h>
+}
+
 
 #include "safe_queue.h"
 
@@ -24,7 +29,7 @@ public:
     //此处传入的 id 参数 , 直接设置给 id 成员变量
     //  通过初始化列表 , 初始化成员变量
     //  初始化列表项 id(id) 解读 : 括号外部的 id 表示成员变量名称 , 括号内部的 id 表示参数 id
-    BaseChannel(int id):id(id){}
+    BaseChannel(int id, AVCodecContext *avCodecContext):id(id), avCodecContext(avCodecContext){}
 
     //此处需要声明为虚方法 , 因为子类需要继承父类的方法
     //  如果不生命虚函数 , 那么调用析构函数时 , 只会调用父类的析构函数 , 不会调用子类的析构函数
@@ -50,7 +55,15 @@ public:
      */
     static void releaseAVPacket(AVPacket*& avPacket){
         av_packet_free(&avPacket);
+    }
 
+    /**
+     * 释放 AVFrame
+     * @param avFrame
+     *          参数是 AVFrame* 类型的 引用类型 , & 符号是引用类型的意思
+     */
+    static void releaseAVFrame(AVFrame*& avFrame){
+        av_frame_free(&avFrame);
     }
 
 
@@ -80,6 +93,12 @@ public:
      * 当前是否正在播放中
      */
     bool isPlaying;
+
+    /**
+     * 解码器上下文
+     *      从音视频流中查找编解码器 , 从编解码器中获取编解码器上下文
+     */
+    AVCodecContext *avCodecContext;
 
 };
 

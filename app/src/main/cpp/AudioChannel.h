@@ -10,7 +10,7 @@
 
 class AudioChannel : public BaseChannel {
 public:
-    AudioChannel(int id);
+    AudioChannel(int id,AVCodecContext *avCodecContext);
 
     /**
      * 解码并播放音频

@@ -71,8 +71,8 @@ public:
      *
      *      该方法中需要修改 元素指针指向 , 这里的参数是引用参数
      *
-     *
      * @param value
+     *          取出成功返回值为 1 , 失败返回值为 0
      * @return
      */
     int pop(T &value) {
@@ -175,7 +175,18 @@ private:
      */
     int work;
 
+    /**
+     * 函数指针类型
+     *      typedef void (*ReleaseHandle)(T &)
+     * 在元素释放时回调该函数
+     */
     ReleaseHandle releaseHandle;
+
+    /**
+     * 函数指针类型
+     *      typedef void (*SyncHandle)(queue<T> &)
+     * 在元素同步时回调该函数
+     */
     SyncHandle syncHandle;
 
 };

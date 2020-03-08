@@ -1,6 +1,7 @@
 package kim.hsl.ffmpeg;
 
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -146,6 +147,8 @@ public class Player implements SurfaceHolder.Callback {
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         //画布改变 , 横竖屏切换 , 按下 Home 键 , 按下菜单键
 
+        //将 Surface 传到 Native 层 , 在 Native 层绘制图像
+        native_set_surface(holder.getSurface());
 
     }
 
@@ -158,6 +161,7 @@ public class Player implements SurfaceHolder.Callback {
 
     native void native_prepare(String dataSource);
     native void native_start();
+    native void native_set_surface(Surface surface);
 
 
 }

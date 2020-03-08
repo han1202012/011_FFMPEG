@@ -164,12 +164,15 @@ void FFMPEG::_prepare() {
         if(codecParameters->codec_type == AVMEDIA_TYPE_AUDIO){
 
             //音频
-            audioChannel = new AudioChannel(i);
+            audioChannel = new AudioChannel(i, avCodecContext);
 
         }else if(codecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
 
             //视频
-            videoChannel = new VideoChannel(i);
+            videoChannel = new VideoChannel(i, avCodecContext);
+
+            //设置视频回调函数
+            videoChannel->setShowFrameCallback(callback);
 
         }
 
@@ -224,6 +227,9 @@ void FFMPEG::start() {
     //  注意判空
     if(videoChannel){
         videoChannel->avPackets.setWork(1);
+
+        //开始播放 , 这里是播放入口
+        videoChannel->play();
     }
 
     if(audioChannel){
@@ -318,5 +324,16 @@ void FFMPEG::_start() {
 
 
     //2 . 解码
+
+}
+
+/**
+ * 将图像绘制回调函数从 native-lib.cpp 中传递给 VideoChannel.h
+ *
+ * @param callback
+ */
+void FFMPEG::setShowFrameCallback(ShowFrameCallback callback) {
+
+    this->callback = callback;
 
 }

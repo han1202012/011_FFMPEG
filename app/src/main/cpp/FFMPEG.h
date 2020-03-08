@@ -42,6 +42,12 @@ public: //类中默认都是私有的, 如果共有需要指定 public
     //子线程中调用该方法 , 目的是可以在该方法中随意调用 FFMPEG 类对象的成员变量
     void _start();
 
+    /**
+     * 设置图像绘制函数指针
+     * @param callback
+     */
+    void setShowFrameCallback(ShowFrameCallback callback);
+
 private:
 
     //保存数据源
@@ -67,6 +73,9 @@ private:
 
     //记录当前是否正在进行播放
     bool isPlaying;
+
+    //绘制视频图像的回调函数 , void (*ShowFrameCallback)(uint8_t *, int, int, int) 类型函数指针
+    ShowFrameCallback callback;
 
 };
 
