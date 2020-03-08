@@ -50,6 +50,8 @@ void show(uint8_t *data, int linesize, int width, int height){
 
     //首先确保 ANativeWindow * aNativeWindow 绘制载体存在 , 否则直接退出
     if(!aNativeWindow){
+        //解除同步锁 , 否则一直阻塞在此处
+        pthread_mutex_unlock(&mutex);
         return;
     }
 
