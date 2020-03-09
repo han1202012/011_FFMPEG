@@ -59,6 +59,9 @@ private:
     //播放子线程 ID
     pthread_t pid_play;
 
+    /**
+     * 编解码器 上下文环境
+     */
     AVFormatContext *formatContext;
 
     JavaCallHelper *callHelper;
