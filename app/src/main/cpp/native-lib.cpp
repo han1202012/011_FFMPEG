@@ -10,7 +10,7 @@
 FFMPEG *ffmpeg = 0;
 
 /**
- * 原生绘制
+ * 原生绘制窗口
  */
 ANativeWindow * aNativeWindow;
 
@@ -149,9 +149,6 @@ Java_kim_hsl_ffmpeg_Player_native_1set_1surface(JNIEnv *env, jobject instance, j
 
     //转换新的 ANativeWindow
     aNativeWindow = ANativeWindow_fromSurface(env, surface);
-
-    //
-
 
     //解除同步锁
     pthread_mutex_unlock(&mutex);
