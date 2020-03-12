@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
             东方卫视：rtmp://58.200.131.2:1935/livetv/dftv 
         */
 
-        //这个是香港卫视直播地址
+        //这个是香港卫视直播地址 ( 不能用 )
         //player.setDataSource("rtmp://live.hkstv.hk.lxdns.com/live/hks");
 
         //这是湖南卫视的直播地址

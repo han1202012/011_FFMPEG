@@ -67,12 +67,6 @@ private:
     pthread_t pid_show;
 
     /**
-     * 保存解码后的图像
-     *      绘制线程中一直读取并绘制该图像
-     */
-    SafeQueue<AVFrame *> avFrames;
-
-    /**
      * 用于图像像素格式转换 YUV -> RGBA
      */
     SwsContext *swsContext = 0;

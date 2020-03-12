@@ -232,8 +232,12 @@ void FFMPEG::start() {
         videoChannel->play();
     }
 
+    //注意判空 , 确保执行前已经初始化
     if(audioChannel){
         audioChannel->avPackets.setWork(1);
+
+        //开始播放音频
+        audioChannel->play();
     }
 
 

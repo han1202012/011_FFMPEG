@@ -14,4 +14,13 @@ AudioChannel::AudioChannel(int id,AVCodecContext *avCodecContext) : BaseChannel(
  */
 void AudioChannel::play() {
 
+    //设置播放标志位为 1 , 代表当前正在播放中
+    isPlaying = 1;
+
+    // 设置 编码数据 , 解码数据 , 两个队列的运行状态
+    avFrames.setWork(1);
+    avPackets.setWork(1);
+
+    // I . 解码音频
+
 }

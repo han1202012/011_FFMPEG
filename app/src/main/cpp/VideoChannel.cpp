@@ -17,18 +17,12 @@ extern "C"{
 
 VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
 
-    //设置 SafeQueue<AVFrame *> avFrames 安全队列释放回调方法
-    avFrames.setReleaseHandle(releaseAVFrame);
-
 }
 
 /**
  * 析构方法
  */
 VideoChannel::~VideoChannel() {
-
-    //释放 SafeQueue<AVFrame *> avFrames 安全队列资源
-    avFrames.clear();
 
 }
 
@@ -83,6 +77,10 @@ void VideoChannel::play() {
 
     //设置播放标志位为 1 , 代表当前正在播放中
     isPlaying = 1;
+
+    //设置两个队列的运行状态
+    avFrames.setWork(1);
+    avPackets.setWork(1);
 
     //创建并执行解码线程
     pthread_create(&pid_decode , 0 , decode_thread , this);

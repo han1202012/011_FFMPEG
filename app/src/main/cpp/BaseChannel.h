@@ -29,7 +29,15 @@ public:
     //此处传入的 id 参数 , 直接设置给 id 成员变量
     //  通过初始化列表 , 初始化成员变量
     //  初始化列表项 id(id) 解读 : 括号外部的 id 表示成员变量名称 , 括号内部的 id 表示参数 id
-    BaseChannel(int id, AVCodecContext *avCodecContext):id(id), avCodecContext(avCodecContext){}
+    BaseChannel(int id, AVCodecContext *avCodecContext):id(id), avCodecContext(avCodecContext){
+
+        //设置 SafeQueue<AVFrame *> avFrames 安全队列释放回调方法
+        avFrames.setReleaseHandle(releaseAVFrame);
+
+        //设置一个回调函数 , 该回调函数会在调用 clear() 方法时 , 将清除的元素释放
+        avPackets.setReleaseHandle(BaseChannel::releaseAVPacket);
+
+    }
 
     //此处需要声明为虚方法 , 因为子类需要继承父类的方法
     //  如果不生命虚函数 , 那么调用析构函数时 , 只会调用父类的析构函数 , 不会调用子类的析构函数
@@ -40,11 +48,11 @@ public:
         //AVPacket* 结构体指针使用的是 av_packet_alloc() 方法在堆内存中创建的
         //  需要使用专门的释放方法 void av_packet_free(AVPacket **pkt) , 注意传入的是二维指针
 
-        //设置一个回调函数 , 该回调函数会在调用 clear() 方法时 , 将清除的元素释放
-        avPackets.setReleaseHandle(BaseChannel::releaseAVPacket);
-
         //清除队列
         avPackets.clear();
+
+        //释放 SafeQueue<AVFrame *> avFrames 安全队列资源
+        avFrames.clear();
 
     }
 
@@ -85,9 +93,17 @@ public:
     int id;
 
     /**
+     * 编码数据包队列 , 保存编码后的视频或音频 , 不能用于直接播放 , 需要先解码再使用
      * 安全队列 , 存放音视频流中的真数据包 AVPacket 结构体指针
      */
     SafeQueue<AVPacket*> avPackets;
+
+    /**
+     * 解码数据包队列 , 该音视频数据可以直接拿来播放
+     * 保存解码后的图像 或 音频
+     *      绘制线程中一直读取并绘制该图像 或 播放该音频
+     */
+    SafeQueue<AVFrame *> avFrames;
 
     /**
      * 当前是否正在播放中
