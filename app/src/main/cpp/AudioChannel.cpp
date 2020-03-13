@@ -6,7 +6,25 @@
 
 AudioChannel::AudioChannel(int id,AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
 
+    // 双声道立体声 每个采样 16 位 , data 中存放了 1 秒钟的音频数据
+    data = static_cast<uint8_t *>(malloc(44100 * 2 * 2));
+
+    //初始化内存数据
+    memset(data, 0, 44100 * 2 * 2);
+
 }
+
+AudioChannel::~AudioChannel(){
+
+    //释放 data 音频缓冲区
+    if(data){
+        free(data);
+        data = 0;
+    }
+
+}
+
+
 
 
 /**
@@ -60,6 +78,30 @@ void AudioChannel::play() {
     // 设置 编码数据 , 解码数据 , 两个队列的运行状态
     avFrames.setWork(1);
     avPackets.setWork(1);
+
+    /*
+     struct SwrContext *swr_alloc_set_opts(struct SwrContext *s,
+                                      int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate,
+                                      int64_t  in_ch_layout, enum AVSampleFormat  in_sample_fmt, int  in_sample_rate,
+                                      int log_offset, void *log_ctx);
+     */
+
+    // 初始化音频重采样的上下文
+    swrContext = swr_alloc_set_opts(
+            0 ,                     //现在还没有 SwrContext 上下文 , 先传入 0
+
+            //输出的音频参数
+            AV_CH_LAYOUT_STEREO ,   //双声道立体声
+            AV_SAMPLE_FMT_S16 ,     //采样位数 16 位
+            44100 ,                 //输出的采样率
+
+            //从编码器中获取输入音频格式
+            avCodecContext->channel_layout, //输入的声道数
+            avCodecContext->sample_fmt,     //输入的采样位数
+            avCodecContext->sample_rate,    //输入的采样率
+            0, 0    //日志参数 设置 0 即可
+            );
+
 
     // I . 解码音频
 
@@ -168,9 +210,105 @@ void AudioChannel::decode() {
 
 }
 
-// 缓冲队列播放器使用的输出混音器设置的辅助效果
-static const SLEnvironmentalReverbSettings reverbSettings =
-        SL_I3DL2_ENVIRONMENT_PRESET_STONECORRIDOR;
+
+/**
+ * 获取 PCM 采样数据
+ * @return
+ *      返回获取的 PCM 数据字节大小
+ */
+int AudioChannel::getPCM() {
+
+    //获取的 PCM 数据字节大小
+    int pcm_data_size = 0;
+
+    // 之前将解码后的样本都 push 到了 SafeQueue<AVFrame *> avFrames 安全队列中
+    //  从安全队列中获取解码后的音频数据
+    AVFrame *avFrame;
+    int result_pop = avFrames.pop(avFrame);
+
+    if(!isPlaying){
+        //如果当前没有播放 , 那么直接退出 , 退出前如果成功获取到了 AVFrame 数据 , 那么释放该数据
+        if(result_pop){
+            releaseAVFrame(avFrame);
+        }
+        return pcm_data_size;
+    }
+
+    //OpenSLES 播放器设定播放的音频格式是 立体声 , 44100 Hz 采样 , 16位采样位数
+    //  解码出来的 AVFrame 中的数据格式不确定 , 需要进行重采样
+
+    /*
+        int64_t swr_get_delay(
+        struct SwrContext *s,
+        int64_t base
+        );
+
+        转码的过程中 , 输入 10 个数据 , 并不一定都能处理完毕并输出 10 个数据 , 可能处理输出了 8 个数据
+        还剩余 2 个数据没有处理
+
+        那么在下一次处理的时候 , 需要将上次没有处理完的两个数据处理了 ;
+        如果不处理上次的2个数据 , 那么数据会一直积压 , 如果积压数据过多 , 最终造成很大的延迟 , 甚至崩溃
+
+        因此每次处理的时候 , 都要尝试将上次剩余没有处理的数据加入到本次处理的数据中
+
+        如果计算出的 delay 一直等于 0 , 说明没有积压数据
+     */
+    int64_t delay = swr_get_delay(swrContext , avFrame->sample_rate);
+
+    /*
+        将 a 个数据 , 由 c 采样率转换成 b 采样率后 , 返回多少数据
+        int64_t av_rescale_rnd(int64_t a, int64_t b, int64_t c, enum AVRounding rnd) av_const;
+
+        下面的方法时将 avFrame->nb_samples 个数据 , 由 avFrame->sample_rate 采样率转为 44100 采样率
+        返回的数据个数
+
+        AV_ROUND_UP : 向上取整
+     */
+    int64_t out_count = av_rescale_rnd(
+            avFrame->nb_samples + delay, //本次要处理的数据个数
+            44100,
+            avFrame->sample_rate ,
+            AV_ROUND_UP );
+
+    /*
+     int swr_convert(
+            struct SwrContext *s,   //上下文
+            uint8_t **out,          //输出的缓冲区 ( 需要计算 )
+            int out_count,          //输出的缓冲区最大可接受的数据大小 ( 需要计算 )
+            const uint8_t **in ,    //输入的数据
+            int in_count);          //输入的数据大小
+
+    返回值 : 转换后的采样个数
+     */
+    int samples_out_count = swr_convert(
+            swrContext ,
+            &data,
+            out_count ,
+            reinterpret_cast<const uint8_t **>(avFrame->data),
+            avFrame->nb_samples
+            );
+
+    //TODO 14_2 58:32
+
+    return pcm_data_size;
+}
+
+
+
+//每当缓冲数据播放完毕后 , 会自动回调该回调函数
+// this callback handler is called every time a buffer finishes playing
+void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
+{
+    //获取当前类 , 用于调用私有的 OpenSL ES 的相关成员变量
+    AudioChannel *audioChannel = static_cast<AudioChannel *>(context);
+
+
+    //获取 PCM 采样数据
+    audioChannel->getPCM();
+
+
+}
+
 
 /**
  * 实现播放方法
@@ -180,6 +318,7 @@ static const SLEnvironmentalReverbSettings reverbSettings =
 void AudioChannel::playback() {
 
     // I . 创建 OpenSLES 引擎并获取引擎的接口 ( 相关代码拷贝自 Google 官方示例 native-audio )
+    //      参考 : https://github.com/android/ndk-samples/blob/master/native-audio/app/src/main/cpp/native-audio-jni.c
 
     //声明每个方法执行的返回结果 , 一般情况下返回 SL_RESULT_SUCCESS 即执行成功
     //  该类型本质是 int 类型 , 定义的是各种类型的异常
@@ -208,9 +347,9 @@ void AudioChannel::playback() {
     //  输出声音 , 添加各种音效 ( 混响 , 重低音 , 环绕音 , 均衡器 等 ) , 都要通过混音器实现 ;
 
     // 创建输出混音器对象 , 可以指定一个混响效果参数 ( 该混淆参数可选 )
-    const SLInterfaceID ids[1] = {SL_IID_ENVIRONMENTALREVERB};
-    const SLboolean req[1] = {SL_BOOLEAN_FALSE};
-    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, ids, req);
+    const SLInterfaceID ids_engine[1] = {SL_IID_ENVIRONMENTALREVERB};
+    const SLboolean req_engine[1] = {SL_BOOLEAN_FALSE};
+    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, ids_engine, req_engine);
     assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
@@ -235,9 +374,132 @@ void AudioChannel::playback() {
     //III . 创建播放器
 
 
+    //1 . 配置音源输入
 
 
+    // 配置要播放的音频输入缓冲队列属性参数 , 缓冲区大小 , 音频格式 , 采样率 , 样本位数 , 通道数 , 样本大小端格式
+    SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
+    /*
+        typedef struct SLDataFormat_PCM_ {
+        SLuint32 		formatType;     //数据格式                 SL_DATAFORMAT_PCM
+        SLuint32 		numChannels;    //通道数 , 左右声道 2个     2
+        SLuint32 		samplesPerSec;  //采样率 44100Hz           SL_SAMPLINGRATE_44_1
+        SLuint32 		bitsPerSample;  //采样位数 16位            SL_PCMSAMPLEFORMAT_FIXED_16
+        SLuint32 		containerSize;  //容器大小                 SL_PCMSAMPLEFORMAT_FIXED_16
+        SLuint32 		channelMask;    //通道        SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT
+        SLuint32		endianness;     //小端格式                 SL_BYTEORDER_LITTLEENDIAN
+    } SLDataFormat_PCM;
+     */
+    SLDataFormat_PCM format_pcm = {SL_DATAFORMAT_PCM,           //PCM 格式
+                                   2,                           //两个声道
+                                   SL_SAMPLINGRATE_44_1,        //采样率 44100 Hz
+                                   SL_PCMSAMPLEFORMAT_FIXED_16, //采样位数 16位
+                                   SL_PCMSAMPLEFORMAT_FIXED_16, //容器为 16 位
+                                   SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,  //左右双声道
+                                   SL_BYTEORDER_LITTLEENDIAN};  //小端格式
+
+    // 设置音频数据源 , 配置缓冲区 ( loc_bufq ) 与 音频格式 (format_pcm)
+    SLDataSource audioSrc = {&loc_bufq, &format_pcm};
 
 
+    //2 . 配置声音输出
+
+
+    // 配置混音器 : 将 outputMixObject 混音器对象装载入 SLDataLocator_OutputMix 结构体中
+    SLDataLocator_OutputMix loc_outmix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
+
+    // 将 SLDataLocator_OutputMix 结构体装载到 SLDataSink 中
+    //  音频输出通过 loc_outmix 输出 , 实际上是通过 outputMixObject 混音器对象输出的
+    SLDataSink audioSnk = {&loc_outmix, NULL};
+
+    /*
+     * 创建音频播放器:
+     *      如果需要效果器时 , 不支持高性能音频
+     *     ( fast audio does not support when SL_IID_EFFECTSEND is required, skip it
+     *          for fast audio case )
+     */
+
+    // 操作队列接口 , 如果需要 特效接口 , 添加 SL_IID_EFFECTSEND
+    const SLInterfaceID ids_player[3] = {SL_IID_BUFFERQUEUE, SL_IID_VOLUME, SL_IID_EFFECTSEND,
+            /*SL_IID_MUTESOLO,*/};
+    const SLboolean req_player[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+            /*SL_BOOLEAN_TRUE,*/ };
+
+    // 创建播放器
+    result = (*engineEngine)->CreateAudioPlayer(
+            engineEngine,
+            &bqPlayerObject,
+            &audioSrc, //音频输入
+            &audioSnk, //音频商户处
+            bqPlayerSampleRate? 2 : 3,//
+            ids_player,
+            req_player);
+
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+    // 创建播放器对象
+    result = (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+    // 获取播放器 Player 接口 : 该接口用于设置播放器状态 , 开始 暂停 停止 播放 等操作
+    result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+    // 获取播放器 缓冲队列 接口 : 该接口用于控制 音频 缓冲区数据 播放
+    result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
+                                             &bqPlayerBufferQueue);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+
+    // IV . 注册回调函数
+
+
+    // 注册缓冲区队列的回调函数 , 每次播放完数据后 , 会自动回调该函数
+    //      传入参数 this , 就是 bqPlayerCallback 函数中的 context 参数
+    result = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, this);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+
+    // 获取效果器发送接口 ( get the effect send interface )
+    bqPlayerEffectSend = NULL;
+    if( 0 == bqPlayerSampleRate) {
+        result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_EFFECTSEND,
+                                                 &bqPlayerEffectSend);
+        assert(SL_RESULT_SUCCESS == result);
+        (void)result;
+    }
+
+#if 0   // mute/solo is not supported for sources that are known to be mono, as this is
+    // get the mute/solo interface
+    result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_MUTESOLO, &bqPlayerMuteSolo);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+#endif
+
+    //V . 获取音量控制接口
+
+    // 获取音量控制接口 ( get the volume interface ) [ 如果需要调节音量可以获取该接口 ]
+    result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+
+    // VI . 设置播放状态
+
+    // 设置播放器正在播放状态 ( set the player's state to playing )
+    result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
+    assert(SL_RESULT_SUCCESS == result);
+    (void)result;
+
+
+    // VII . 手动调用激活回调函数
+
+    // 手动激活 , 手动调用一次 bqPlayerCallback 回调函数
+    bqPlayerCallback(bqPlayerBufferQueue, this);
 
 }
