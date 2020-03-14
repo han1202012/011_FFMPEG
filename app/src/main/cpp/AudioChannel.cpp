@@ -293,8 +293,6 @@ int AudioChannel::getPCM() {
     //根据样本个数计算样本的字节数
     pcm_data_size = samples_out_count * 2 * 2;
 
-    //TODO 14_2 58:32
-
     return pcm_data_size;
 }
 
