@@ -69,4 +69,7 @@ target_link_libraries(
 
         #在 Native 层使用 ANativeWindow 进行原生绘制时 , 需要链接 libandroid.so 库
         android
+
+        #调用 OpenSLES 需要链接该库
+        OpenSLES
 )

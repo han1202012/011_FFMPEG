@@ -7,6 +7,8 @@
 
 #include "BaseChannel.h"
 
+#include <android/log.h>
+
 // OpenSLES 头文件
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -41,6 +43,11 @@ public:
      * @return
      */
     int getPCM();
+
+    /**
+     * 存放采样缓冲区 , 声明在 public 中目的是为了在外部也可以访问
+     */
+    uint8_t *data;
 
 private:
 
@@ -121,11 +128,6 @@ private:
      */
     SwrContext *swrContext = 0;
 
-
-    /**
-     * 存放采样缓冲区
-     */
-    uint8_t *data;
 
     /*SLEffectSendItf bqPlayerEffectSend;
     SLMuteSoloItf bqPlayerMuteSolo;

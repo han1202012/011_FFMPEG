@@ -102,6 +102,9 @@ void AudioChannel::play() {
             0, 0    //日志参数 设置 0 即可
             );
 
+    //注意创建完之后初始化
+    swr_init(swrContext);
+
 
     // I . 解码音频
 
@@ -111,7 +114,7 @@ void AudioChannel::play() {
     // II . 播放视频
 
     //启动播放线程
-    pthread_create(&pid_decode , 0 , audio_decode , this);
+    pthread_create(&pid_decode , 0 , audio_playback , this);
 
 
 }
@@ -198,8 +201,6 @@ void AudioChannel::decode() {
         //      将该图像数据 , 放到队列中 , 此时 绘制线程从队列中获取该数据 , 并绘制该图像到播放器中
         avFrames.push(avFrame);
 
-
-
     }
 
     //上面将 AVPact * 包取出来 , 这里要将其内存释放
@@ -217,6 +218,8 @@ void AudioChannel::decode() {
  *      返回获取的 PCM 数据字节大小
  */
 int AudioChannel::getPCM() {
+
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG" , "getPCM()");
 
     //获取的 PCM 数据字节大小
     int pcm_data_size = 0;
@@ -286,7 +289,7 @@ int AudioChannel::getPCM() {
             swrContext ,
             &data,
             out_count ,
-            reinterpret_cast<const uint8_t **>(avFrame->data),
+            (const uint8_t **)avFrame->data, //普通指针转为 const 指针需要使用 const_cast 转换
             avFrame->nb_samples
             );
 
@@ -306,10 +309,18 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     AudioChannel *audioChannel = static_cast<AudioChannel *>(context);
 
 
-    //获取 PCM 采样数据
+    //获取 PCM 采样数据 , 将重采样的数据放到 AudioChannel 中的 data 成员中
     int data_size = audioChannel->getPCM();
 
-    //TODO 14_2 1:02:50
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG" , "bqPlayerCallback data_size %d " , data_size);
+
+    //开始播放
+    if ( data_size > 0 ){
+
+        //通过播放器队列接口 , 将 PCM 数据加入到该队列缓冲区后 , 就会自动播放这段音频
+        //  注意 , 最后一个参数是样本个数
+        (*bq)->Enqueue(bq, audioChannel->data, data_size);
+    }
 
 }
 
@@ -330,18 +341,22 @@ void AudioChannel::playback() {
 
     // 创建引擎
     result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "slCreateEngine : SLresult : %d", result);
+
     // 返回 0 成功 , 否则失败 , 一旦失败就中断退出
-    assert(SL_RESULT_SUCCESS == result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 实现引擎
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*engineObject)->Realize : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 获取引擎接口 , 使用该接口创建输出混音器 , 音频播放器等其它对象
     //      引擎对象不提供任何调用的方法 , 引擎调用的方法都定义在接口中
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*engineObject)->GetInterface : SLresult : %d", result);
     assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
@@ -354,12 +369,13 @@ void AudioChannel::playback() {
     const SLInterfaceID ids_engine[1] = {SL_IID_ENVIRONMENTALREVERB};
     const SLboolean req_engine[1] = {SL_BOOLEAN_FALSE};
     result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, ids_engine, req_engine);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*engineEngine)->CreateOutputMix : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 实现输出混音器
     result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
-    assert(SL_RESULT_SUCCESS == result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 获取环境混响接口
@@ -368,6 +384,7 @@ void AudioChannel::playback() {
     // the required MODIFY_AUDIO_SETTINGS permission was not requested and granted
     result = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,
                                               &outputMixEnvironmentalReverb);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*outputMixObject)->GetInterface : SLresult : %d", result);
     if (SL_RESULT_SUCCESS == result) {
         result = (*outputMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(
                 outputMixEnvironmentalReverb, &reverbSettings);
@@ -439,22 +456,25 @@ void AudioChannel::playback() {
             ids_player,
             req_player);
 
-    assert(SL_RESULT_SUCCESS == result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 创建播放器对象
     result = (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerObject)->Realize : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 获取播放器 Player 接口 : 该接口用于设置播放器状态 , 开始 暂停 停止 播放 等操作
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerPlay);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerObject)->GetInterface : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
     // 获取播放器 缓冲队列 接口 : 该接口用于控制 音频 缓冲区数据 播放
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
                                              &bqPlayerBufferQueue);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerObject)->GetInterface : SLresult : %d", result);
     assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
@@ -465,7 +485,8 @@ void AudioChannel::playback() {
     // 注册缓冲区队列的回调函数 , 每次播放完数据后 , 会自动回调该函数
     //      传入参数 this , 就是 bqPlayerCallback 函数中的 context 参数
     result = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, this);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerBufferQueue)->RegisterCallback : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
 
@@ -474,7 +495,8 @@ void AudioChannel::playback() {
     if( 0 == bqPlayerSampleRate) {
         result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_EFFECTSEND,
                                                  &bqPlayerEffectSend);
-        assert(SL_RESULT_SUCCESS == result);
+        __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerObject)->GetInterface : SLresult : %d", result);
+        //assert(SL_RESULT_SUCCESS == result);
         (void)result;
     }
 
@@ -489,7 +511,8 @@ void AudioChannel::playback() {
 
     // 获取音量控制接口 ( get the volume interface ) [ 如果需要调节音量可以获取该接口 ]
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerObject)->GetInterface : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
 
@@ -497,7 +520,8 @@ void AudioChannel::playback() {
 
     // 设置播放器正在播放状态 ( set the player's state to playing )
     result = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, SL_PLAYSTATE_PLAYING);
-    assert(SL_RESULT_SUCCESS == result);
+    __android_log_print(ANDROID_LOG_INFO, "FFMPEG", "(*bqPlayerPlay)->SetPlayState : SLresult : %d", result);
+    //assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
 

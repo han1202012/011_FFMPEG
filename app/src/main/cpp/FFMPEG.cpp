@@ -298,6 +298,8 @@ void FFMPEG::_start() {
             if(audioChannel && avPacket->stream_index == audioChannel->id){
 
                 //音频流
+                //将读取的音频数据帧存储到队列中
+                audioChannel->avPackets.push(avPacket);
 
             }else if(videoChannel && avPacket->stream_index == videoChannel->id){
 
