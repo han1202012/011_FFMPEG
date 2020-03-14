@@ -309,8 +309,9 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 
 
     //获取 PCM 采样数据
-    audioChannel->getPCM();
+    int data_size = audioChannel->getPCM();
 
+    //TODO 14_2 1:02:50
 
 }
 
