@@ -318,7 +318,7 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     if ( data_size > 0 ){
 
         //通过播放器队列接口 , 将 PCM 数据加入到该队列缓冲区后 , 就会自动播放这段音频
-        //  注意 , 最后一个参数是样本个数
+        //  注意 , 最后一个参数是样本字节数
         (*bq)->Enqueue(bq, audioChannel->data, data_size);
     }
 
