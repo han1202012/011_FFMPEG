@@ -278,7 +278,9 @@ int AudioChannel::getPCM() {
             const uint8_t **in ,    //输入的数据
             int in_count);          //输入的数据大小
 
-    返回值 : 转换后的采样个数
+    返回值 : 转换后的采样个数 , 是样本个数 , 每个样本是 16 位 , 两个字节 ;
+            samples_out_count 是每个通道的样本数 , samples_out_count * 2 是立体声双声道样本个数
+            samples_out_count * 2 * 2 是字节个数
      */
     int samples_out_count = swr_convert(
             swrContext ,
@@ -287,6 +289,9 @@ int AudioChannel::getPCM() {
             reinterpret_cast<const uint8_t **>(avFrame->data),
             avFrame->nb_samples
             );
+
+    //根据样本个数计算样本的字节数
+    pcm_data_size = samples_out_count * 2 * 2;
 
     //TODO 14_2 58:32
 
