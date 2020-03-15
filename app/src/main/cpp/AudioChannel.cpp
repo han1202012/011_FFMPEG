@@ -6,7 +6,10 @@
 
 AudioChannel::AudioChannel(int id,AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
 
-    // 双声道立体声 每个采样 16 位 , data 中存放了 1 秒钟的音频数据
+    /**
+     * 存放重采样后的数据缓冲区 , 这个缓冲区存储 1 秒的数据
+     * 44100 Hz 采样率 , 16 位采样位数 , 双声道立体声 , 占用内存 44100 * 2 * 2 字节
+     */
     data = static_cast<uint8_t *>(malloc(44100 * 2 * 2));
 
     //初始化内存数据
@@ -80,13 +83,12 @@ void AudioChannel::play() {
     avPackets.setWork(1);
 
     /*
+     初始化音频重采样的上下文
      struct SwrContext *swr_alloc_set_opts(struct SwrContext *s,
-                                      int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate,
-                                      int64_t  in_ch_layout, enum AVSampleFormat  in_sample_fmt, int  in_sample_rate,
-                                      int log_offset, void *log_ctx);
+        int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate,
+        int64_t  in_ch_layout, enum AVSampleFormat  in_sample_fmt, int  in_sample_rate,
+        int log_offset, void *log_ctx);
      */
-
-    // 初始化音频重采样的上下文
     swrContext = swr_alloc_set_opts(
             0 ,                     //现在还没有 SwrContext 上下文 , 先传入 0
 
@@ -222,7 +224,7 @@ int AudioChannel::getPCM() {
     __android_log_print(ANDROID_LOG_INFO, "FFMPEG" , "getPCM()");
 
     //获取的 PCM 数据字节大小
-    int pcm_data_size = 0;
+    int pcm_data_bit_size = 0;
 
     // 之前将解码后的样本都 push 到了 SafeQueue<AVFrame *> avFrames 安全队列中
     //  从安全队列中获取解码后的音频数据
@@ -234,7 +236,7 @@ int AudioChannel::getPCM() {
         if(result_pop){
             releaseAVFrame(avFrame);
         }
-        return pcm_data_size;
+        return pcm_data_bit_size;
     }
 
     //OpenSLES 播放器设定播放的音频格式是 立体声 , 44100 Hz 采样 , 16位采样位数
@@ -277,15 +279,15 @@ int AudioChannel::getPCM() {
      int swr_convert(
             struct SwrContext *s,   //上下文
             uint8_t **out,          //输出的缓冲区 ( 需要计算 )
-            int out_count,          //输出的缓冲区最大可接受的数据大小 ( 需要计算 )
+            int out_count,          //输出的缓冲区最大可接受的样本个数 ( 需要计算 )
             const uint8_t **in ,    //输入的数据
-            int in_count);          //输入的数据大小
+            int in_count);          //输入的样本个数
 
     返回值 : 转换后的采样个数 , 是样本个数 , 每个样本是 16 位 , 两个字节 ;
             samples_out_count 是每个通道的样本数 , samples_out_count * 2 是立体声双声道样本个数
             samples_out_count * 2 * 2 是字节个数
      */
-    int samples_out_count = swr_convert(
+    int samples_per_channel_count = swr_convert(
             swrContext ,
             &data,
             out_count ,
@@ -294,9 +296,9 @@ int AudioChannel::getPCM() {
             );
 
     //根据样本个数计算样本的字节数
-    pcm_data_size = samples_out_count * 2 * 2;
+    pcm_data_bit_size = samples_per_channel_count * 2 * 2;
 
-    return pcm_data_size;
+    return pcm_data_bit_size;
 }
 
 
