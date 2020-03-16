@@ -7,6 +7,7 @@
 
 
 #include "BaseChannel.h"
+#include "AudioChannel.h"
 
 /**
  * 定义函数指针
@@ -52,6 +53,14 @@ public:
     void setShowFrameCallback(ShowFrameCallback callback);
 
 
+    /**
+     * 获取音频对象
+     *      主要是为了获取音频中的时间戳 , 用于进行音视频同步
+     * @param audioChannel
+     */
+    void setAudioChannel (AudioChannel *audioChannel);
+
+
 
 
 private:
@@ -81,6 +90,12 @@ private:
      *  帧率越高 , 画面越流畅
      */
     int fps;
+
+    /**
+     * 音频解码播放处理对象
+     *      主要用于获取音频的 pts , 用于音视频同步
+     */
+    AudioChannel *audioChannel;
 
 };
 

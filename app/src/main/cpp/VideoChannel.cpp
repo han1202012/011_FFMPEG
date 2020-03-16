@@ -16,15 +16,27 @@ extern "C"{
 #include <libavutil/imgutils.h>
 }
 
-VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps) : BaseChannel(id, avCodecContext) {
+VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps) : BaseChannel(id, avCodecContext, time_base) {
 
     this->fps = fps;
+
 }
 
 /**
  * 析构方法
  */
 VideoChannel::~VideoChannel() {
+
+}
+
+
+/**
+ * 设置音频解码播放对象
+ * @param audioChannel
+ */
+void VideoChannel::setAudioChannel(AudioChannel *audioChannel) {
+
+    this->audioChannel = audioChannel;
 
 }
 
@@ -290,10 +302,52 @@ void VideoChannel::show() {
 
         //获取当前画面的相对播放时间 , 相对 : 即从播放开始到现在的时间
         //  该值大多数情况下 , 与 pts 值是相同的
-        avFrame->best_effort_timestamp;
+        //  该值比 pts 更加精准 , 参考了更多的信息
+        //  转换成秒 : 这里要注意 pts 需要转成 秒 , 需要乘以 time_base 时间单位
+        //  其中 av_q2d 是将 AVRational 转为 double 类型
+        double vedio_best_effort_timestamp_second = avFrame->best_effort_timestamp * av_q2d(time_base);
 
-        //休眠 , 单位微秒 , 控制 FPS 帧率
-        av_usleep(frame_delay);
+        if(vedio_best_effort_timestamp_second == 0 || !audioChannel){
+
+            //如果播放的是第一帧 , 或者当前音频没有播放 , 就要正常播放
+
+            //休眠 , 单位微秒 , 控制 FPS 帧率
+            av_usleep(frame_delay);
+
+        }else{
+
+            //如果不是第一帧 , 要开始考虑音视频同步问题了
+
+            //获取音频的相对时间
+            if(audioChannel != NULL) {
+
+                //音频的相对播放时间 , 这个是相对于播放开始的相对播放时间
+                double audio_pts_second = audioChannel->audio_pts_second;
+
+                //使用视频相对时间 - 音频相对时间
+                double second_delta = vedio_best_effort_timestamp_second - audio_pts_second;
+
+                //如果 second_delta 大于 0 , 说明视频播放时间比较长 , 视频比音频快
+                //如果 second_delta 小于 0 , 说明视频播放时间比较短 , 视频比音频慢
+
+                if(second_delta > 0){
+
+                    //视频快处理方案 : 增加休眠时间
+
+                    //休眠 , 单位微秒 , 控制 FPS 帧率
+                    av_usleep(frame_delay);
+
+                }else{
+
+                    //视频慢处理方案 : 减小休眠时间 , 甚至不休眠
+
+                }
+
+            }
+
+        }
+
+
 
         //调用回调函数 , 绘制 解码后的图像
 

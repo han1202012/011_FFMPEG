@@ -29,7 +29,7 @@ public:
     //此处传入的 id 参数 , 直接设置给 id 成员变量
     //  通过初始化列表 , 初始化成员变量
     //  初始化列表项 id(id) 解读 : 括号外部的 id 表示成员变量名称 , 括号内部的 id 表示参数 id
-    BaseChannel(int id, AVCodecContext *avCodecContext):id(id), avCodecContext(avCodecContext){
+    BaseChannel(int id, AVCodecContext *avCodecContext, AVRational time_base):id(id), avCodecContext(avCodecContext), time_base(time_base){
 
         //设置 SafeQueue<AVFrame *> avFrames 安全队列释放回调方法
         avFrames.setReleaseHandle(releaseAVFrame);
@@ -126,7 +126,7 @@ public:
      * 相对概念 : 这个时间是相对于开始播放的相对时间
      * 单位 : 秒
      */
-    double pts_second;
+    double audio_pts_second;
 
 
 };
