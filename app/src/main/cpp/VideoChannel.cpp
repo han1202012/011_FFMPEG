@@ -7,6 +7,7 @@
 //导入转换图像格式的库 SwsContext 定义在该库中
 extern "C"{
 #include <libswscale/swscale.h>
+#include <libavutil/time.h>
 }
 
 
@@ -15,8 +16,9 @@ extern "C"{
 #include <libavutil/imgutils.h>
 }
 
-VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
+VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, int fps) : BaseChannel(id, avCodecContext) {
 
+    this->fps = fps;
 }
 
 /**
@@ -226,6 +228,12 @@ void VideoChannel::show() {
             0
             );
 
+
+    //根据帧率 ( fps ) 计算两次图像绘制之间的间隔
+    //  单位换算 : 实际使用的是微秒单位 , 因此后面需要乘以 10 万
+    double frame_delay = 1.0 / fps * 1000 * 1000;
+
+
     //定义从安全队列中获取的 AVFrame *
     AVFrame *avFrame = 0;
 
@@ -279,6 +287,10 @@ void VideoChannel::show() {
                 dst_linesize
                 );
 
+
+
+        //休眠 , 单位微秒 , 控制 FPS 帧率
+        av_usleep(frame_delay);
 
         //调用回调函数 , 绘制 解码后的图像
 

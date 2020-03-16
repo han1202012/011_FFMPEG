@@ -180,11 +180,13 @@ void FFMPEG::_prepare() {
 
             // AVRational 结构体由一个分子和分母组成 , 分子 / 分母就是 fps
             //  也可以使用 av_q2d() 方法传入 AVRational 结构体进行计算
+            //  上面两种方法都可以获取 帧率 ( FPS )
+            //      FPS 的值不是固定的 , 随着视频播放 , 其帧率也会随之改变
             int fps = frame_rate.num / frame_rate.den;
             //int fps = av_q2d(frame_rate);
 
             //视频
-            videoChannel = new VideoChannel(i, avCodecContext);
+            videoChannel = new VideoChannel(i, avCodecContext, fps);
 
             //设置视频回调函数
             videoChannel->setShowFrameCallback(callback);

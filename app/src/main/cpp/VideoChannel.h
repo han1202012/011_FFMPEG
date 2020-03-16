@@ -26,7 +26,7 @@ class VideoChannel : public BaseChannel {
 public:
 
 
-    VideoChannel(int id, AVCodecContext *avCodecContext);
+    VideoChannel(int id, AVCodecContext *avCodecContext, int fps);
 
     ~VideoChannel();
 
@@ -75,6 +75,12 @@ private:
      * 图像绘制回调函数 函数指针
      */
     ShowFrameCallback callback;
+
+    /**
+     * 视频帧率 , 播放过程中会动态改变
+     *  帧率越高 , 画面越流畅
+     */
+    int fps;
 
 };
 
