@@ -16,7 +16,7 @@ extern "C"{
 #include <libavutil/imgutils.h>
 }
 
-VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, int fps) : BaseChannel(id, avCodecContext) {
+VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps) : BaseChannel(id, avCodecContext) {
 
     this->fps = fps;
 }
@@ -288,6 +288,9 @@ void VideoChannel::show() {
                 );
 
 
+        //获取当前画面的相对播放时间 , 相对 : 即从播放开始到现在的时间
+        //  该值大多数情况下 , 与 pts 值是相同的
+        avFrame->best_effort_timestamp;
 
         //休眠 , 单位微秒 , 控制 FPS 帧率
         av_usleep(frame_delay);
@@ -310,8 +313,6 @@ void VideoChannel::show() {
 
     //释放绘制完毕的 AVFrame * 元素 , 传入的参数是引用类型的
     releaseAVFrame(avFrame);
-
-
 }
 
 /**

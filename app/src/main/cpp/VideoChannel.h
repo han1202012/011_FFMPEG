@@ -26,7 +26,7 @@ class VideoChannel : public BaseChannel {
 public:
 
 
-    VideoChannel(int id, AVCodecContext *avCodecContext, int fps);
+    VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps);
 
     ~VideoChannel();
 

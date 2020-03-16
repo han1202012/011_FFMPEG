@@ -4,7 +4,7 @@
 
 #include "AudioChannel.h"
 
-AudioChannel::AudioChannel(int id,AVCodecContext *avCodecContext) : BaseChannel(id, avCodecContext) {
+AudioChannel::AudioChannel(int id,AVCodecContext *avCodecContext, AVRational time_base) : BaseChannel(id, avCodecContext) {
 
     /**
      * 存放重采样后的数据缓冲区 , 这个缓冲区存储 1 秒的数据
@@ -297,6 +297,12 @@ int AudioChannel::getPCM() {
 
     //根据样本个数计算样本的字节数
     pcm_data_bit_size = samples_per_channel_count * 2 * 2;
+
+
+    //计算该音频播放的 相对时间 , 相对 : 即从播放开始到现在的时间
+    //  转换成秒 : 这里要注意 pts 需要转成 秒 , 需要乘以 time_base 时间单位
+    //  其中 av_q2d 是将 AVRational 转为 double 类型
+    pts_second = avFrame->pts * av_q2d(time_base);
 
     return pcm_data_bit_size;
 }

@@ -116,6 +116,19 @@ public:
      */
     AVCodecContext *avCodecContext;
 
+    /**
+     * 时间单位
+     */
+    AVRational time_base;
+
+    /**
+     * 时间戳 : 视频帧的相对显示时间
+     * 相对概念 : 这个时间是相对于开始播放的相对时间
+     * 单位 : 秒
+     */
+    double pts_second;
+
+
 };
 
 

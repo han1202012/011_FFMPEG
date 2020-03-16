@@ -159,12 +159,15 @@ void FFMPEG::_prepare() {
         }
 
 
+        //获取音视频 同步校准的 PTS 的 time_base 单位
+        AVRational time_base = stream->time_base;
+
 
         //一般情况下 , 视频直播流只包含 视频流 和 音频流
         if(codecParameters->codec_type == AVMEDIA_TYPE_AUDIO){
 
             //音频
-            audioChannel = new AudioChannel(i, avCodecContext);
+            audioChannel = new AudioChannel(i, avCodecContext , time_base);
 
         }else if(codecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
 
@@ -186,7 +189,7 @@ void FFMPEG::_prepare() {
             //int fps = av_q2d(frame_rate);
 
             //视频
-            videoChannel = new VideoChannel(i, avCodecContext, fps);
+            videoChannel = new VideoChannel(i, avCodecContext, time_base, fps);
 
             //设置视频回调函数
             videoChannel->setShowFrameCallback(callback);
