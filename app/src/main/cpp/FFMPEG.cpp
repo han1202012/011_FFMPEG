@@ -168,6 +168,21 @@ void FFMPEG::_prepare() {
 
         }else if(codecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
 
+            //获取视频的 FPS 帧率 ( 1秒中播放的帧数 )
+            /*
+             该结构体由一个分子和分母组成 , 分子 / 分母就是 fps
+             typedef struct AVRational{
+                int num; ///< Numerator
+                int den; ///< Denominator
+            } AVRational;
+             */
+            AVRational frame_rate = stream->avg_frame_rate;
+
+            // AVRational 结构体由一个分子和分母组成 , 分子 / 分母就是 fps
+            //  也可以使用 av_q2d() 方法传入 AVRational 结构体进行计算
+            int fps = frame_rate.num / frame_rate.den;
+            //int fps = av_q2d(frame_rate);
+
             //视频
             videoChannel = new VideoChannel(i, avCodecContext);
 
