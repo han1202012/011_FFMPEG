@@ -242,8 +242,8 @@ void VideoChannel::show() {
 
 
     //根据帧率 ( fps ) 计算两次图像绘制之间的间隔
-    //  单位换算 : 实际使用的是微秒单位 , 因此后面需要乘以 10 万
-    double frame_delay = 1.0 / fps * 1000 * 1000;
+    //  注意单位换算 : 实际使用的是微秒单位 , 使用 av_usleep ( ) 方法时 , 需要传入微秒单位 , 后面需要乘以 10 万
+    double frame_delay = 1.0 / fps;
 
 
     //定义从安全队列中获取的 AVFrame *
@@ -307,12 +307,25 @@ void VideoChannel::show() {
         //  其中 av_q2d 是将 AVRational 转为 double 类型
         double vedio_best_effort_timestamp_second = avFrame->best_effort_timestamp * av_q2d(time_base);
 
+        //解码时 , 该值表示画面需要延迟多长时间在显示
+        //  extra_delay = repeat_pict / (2*fps)
+        //  需要使用该值 , 计算一个额外的延迟时间
+        //  这里按照文档中的注释 , 计算一个额外延迟时间
+        //
+        double extra_delay = avFrame->repeat_pict / ( fps * 2 );
+
+        //计算总的帧间隔时间 , 这是真实的间隔时间
+        double total_frame_delay = frame_delay + extra_delay;
+
+        //将 total_frame_delay ( 单位 : 秒 ) , 转换成 微秒值 , 乘以 10 万
+        unsigned microseconds_total_frame_delay = total_frame_delay * 1000 * 1000;
+
         if(vedio_best_effort_timestamp_second == 0 || !audioChannel){
 
             //如果播放的是第一帧 , 或者当前音频没有播放 , 就要正常播放
 
             //休眠 , 单位微秒 , 控制 FPS 帧率
-            av_usleep(frame_delay);
+            av_usleep(microseconds_total_frame_delay);
 
         }else{
 
@@ -327,6 +340,10 @@ void VideoChannel::show() {
                 //使用视频相对时间 - 音频相对时间
                 double second_delta = vedio_best_effort_timestamp_second - audio_pts_second;
 
+                //将相对时间转为 微秒单位
+                unsigned microseconds_delta = second_delta * 1000 * 1000;
+
+
                 //如果 second_delta 大于 0 , 说明视频播放时间比较长 , 视频比音频快
                 //如果 second_delta 小于 0 , 说明视频播放时间比较短 , 视频比音频慢
 
@@ -335,11 +352,34 @@ void VideoChannel::show() {
                     //视频快处理方案 : 增加休眠时间
 
                     //休眠 , 单位微秒 , 控制 FPS 帧率
-                    av_usleep(frame_delay);
+                    av_usleep(microseconds_total_frame_delay + microseconds_delta);
 
-                }else{
+                }else if(second_delta < 0){
 
-                    //视频慢处理方案 : 减小休眠时间 , 甚至不休眠
+                    //视频慢处理方案 :
+                    //  ① 方案 1 : 减小休眠时间 , 甚至不休眠
+                    //  ② 方案 2 : 视频帧积压太多了 , 这里需要将视频帧丢弃 ( 比方案 1 极端 )
+                    if(fabs(second_delta) >= 0.05){
+
+                        /*
+                            如果音视频差距超过了 0.05 秒 , 就开始丢弃视频包 , 使用 方案 2
+                            在视频播放中 , 有 AVPacket 队列 , 和 AVFrame 队列 两个队列
+                            两种包都可以丢弃
+
+                            丢包注意点 :
+
+                            H.264 编码的帧有三种类型 , I / P / B 三种 ;
+                                I 帧 ( I Frame ) : 帧内编码帧 , 可以单独解码并显示 ;
+
+                                P 帧 ( P Frame ) : 前向预测编码帧 , 如果要解码 P 帧 , 需要参考 P 帧前面的编码帧 ;
+
+                                I / P 帧 举例 : 在一个房间内 , 人在动 , 房间背景不懂 , I 帧是完整的画面 ,
+                                               其后面的 P 帧只包含了相对于 I 帧改变的画面内容 , 大部分房间
+                                               背景都需要从 I 帧提取
+                         */
+
+
+                    }
 
                 }
 
