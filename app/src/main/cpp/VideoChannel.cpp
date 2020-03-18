@@ -485,8 +485,11 @@ void VideoChannel::show() {
 
 #endif
 
-                    }
+                    }else{
 
+                        //如果音视频之间差距低于 0.05 秒 , 不操作 ( 50ms )
+
+                    }
                 }
 
             }
