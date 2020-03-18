@@ -16,10 +16,46 @@ extern "C"{
 #include <libavutil/imgutils.h>
 }
 
+/**
+ * 丢弃视频帧数据 , 用于和音频同步
+ *
+ *      该操作调用时 处于线程互斥锁 之间 , 因此不会产生线程互斥的问题
+ *
+ * @param q
+ */
+void dropAVPackets(queue<AVPacket *> &q){
+
+    //该操作的队列就是线程安全队列中的数据存储 queue
+    while (!q.empty()){
+
+        AVPacket *avPacket = q.front();
+
+        //如果不是关键帧 , 释放并移除队列
+        if(avPacket->flags != AV_PKT_FLAG_KEY){
+
+            //注意这里的参数是引用类型参数
+            BaseChannel::releaseAVPacket(avPacket);
+            q.pop();
+
+        }else{
+
+            //如果是关键帧
+
+        }
+
+
+    }
+
+}
+
+
 VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps) : BaseChannel(id, avCodecContext, time_base) {
 
     this->fps = fps;
 
+    //为 avPackets 线程安全队列 , 设置丢包的函数指针 , 用以支持音视频同步
+    //  设置了该函数指针之后 , 一旦回调线程安全队列的 sync 方法 , 在该方法中会和回调 dropAVPackets 方法 ;
+    avPackets.setSyncHandle(dropAVPackets);
 }
 
 /**
@@ -380,6 +416,23 @@ void VideoChannel::show() {
                                 丢弃的帧不能是 I 帧
 
                                 B 帧 ( B Frame ) : 双向预测帧 , 解码 B 帧 , 需要参考前面的编码帧 和 后面的编码帧
+
+                                编解码的时间与空间考量 :
+                                编码 : B 帧 和 P 帧 的使用 , 能大幅度减小视频的空间 ;
+                                解码 :  I 帧 解码时间最短 , 最占用空间
+                                        P 帧解码时间稍长 , 需要参考前面的帧进行解码 , 能小幅度节省空间
+                                        B 帧解码时间最长 , 需要参考前后两帧进行解码 , 能大幅度节省空间
+
+
+                             丢弃数据帧包时需要注意的操作 :
+                                I 帧不能丢 , 只能丢弃 B 帧 和 P 帧 ;
+                                如果丢弃 I 帧 , 就需要将 I 帧后面的 B / P 帧 都要丢掉 , 直到下一个 I 帧
+                                一般情况下是将两个 I 帧之间的 B / P 帧丢弃 ; 因为丢掉一帧 B 帧或 P 帧 ,
+                                    意味着后面的 B / P 帧也无法解析了 , 后面的 B / P 帧也一并丢弃 , 直到遇到 I 帧
+
+
+                            B 帧 / P 帧 产生 : 在编码时 , 可以手动设置是否产生 B 帧 , 可以只产生 P 帧 ;
+
                          */
 
 

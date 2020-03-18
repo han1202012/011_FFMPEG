@@ -20,7 +20,7 @@ class SafeQueue {
     typedef void (*ReleaseHandle)(T &);
 
     /**
-     * 定义 线程安全队列 同步方法 函数类型
+     * 定义 线程安全队列 同步方法 函数类型 , 该方法用于丢弃一部分数据包
      */
     typedef void (*SyncHandle)(queue<T> &);
 
