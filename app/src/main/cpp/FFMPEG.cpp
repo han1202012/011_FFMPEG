@@ -248,6 +248,10 @@ void FFMPEG::start() {
     if(videoChannel){
         videoChannel->avPackets.setWork(1);
 
+        if(audioChannel){
+            videoChannel->setAudioChannel(audioChannel);
+        }
+
         //开始播放 , 这里是播放入口
         videoChannel->play();
     }
@@ -344,8 +348,7 @@ void FFMPEG::_start() {
 
         }
 
-
-
+        
     }
 
 }

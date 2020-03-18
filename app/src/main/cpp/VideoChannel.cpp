@@ -87,6 +87,9 @@ VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational ti
     //为 avPackets 线程安全队列 , 设置丢包的函数指针 , 用以支持音视频同步
     //  设置了该函数指针之后 , 一旦回调线程安全队列的 sync 方法 , 在该方法中会和回调 dropAVPackets 方法 ;
     avPackets.setSyncHandle(dropAVPackets);
+
+    //为 AVFrame 线程安全队列 , 设置丢弃数据帧的函数指针回调 , 用于实现音视频同步
+    avFrames.setSyncHandle(dropAVFrames);
 }
 
 /**
@@ -467,6 +470,7 @@ void VideoChannel::show() {
                          */
 
 //#define DROP_PACKET
+
 #ifdef DROP_AV_PACKET
 
                         //启动 AVPacket 队列丢包
