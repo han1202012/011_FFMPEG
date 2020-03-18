@@ -17,9 +17,11 @@ extern "C"{
 }
 
 /**
- * 丢弃视频帧数据 , 用于和音频同步
+ * 丢弃未解码的视频帧数据 , 用于和音频同步
  *
  *      该操作调用时 处于线程互斥锁 之间 , 因此不会产生线程互斥的问题
+ *
+ *      针对 I / P / B 帧 , 遇到 B / P 帧直接丢弃 , 直到遇到 I 帧
  *
  * @param q
  */
@@ -39,7 +41,8 @@ void dropAVPackets(queue<AVPacket *> &q){
 
         }else{
 
-            //如果是关键帧
+            //如果是关键帧 , 终止丢包操作
+            break;
 
         }
 
@@ -47,6 +50,34 @@ void dropAVPackets(queue<AVPacket *> &q){
     }
 
 }
+
+
+/**
+ * 丢弃解码后的视频帧数据 , 用于和音频同步
+ *
+ *      该操作调用时 处于线程互斥锁 之间 , 因此不会产生线程互斥的问题
+ *
+ *      这个随意丢弃 , 没有 I / B / P 帧种类限制 , 每一帧都是一张完整图片 , 前后没有依赖关系
+ *
+ *      每次丢一个包
+ *
+ * @param q
+ */
+void dropAVFrames(queue<AVFrame *> &q){
+
+    //该操作的队列就是线程安全队列中的数据存储 queue
+    if (!q.empty()){
+
+        AVFrame *avFrame = q.front();
+
+        //注意这里的参数是引用类型参数
+        BaseChannel::releaseAVFrame(avFrame);
+        q.pop();
+
+    }
+
+}
+
 
 
 VideoChannel::VideoChannel(int id, AVCodecContext *avCodecContext, AVRational time_base, int fps) : BaseChannel(id, avCodecContext, time_base) {
@@ -435,6 +466,24 @@ void VideoChannel::show() {
 
                          */
 
+//#define DROP_PACKET
+#ifdef DROP_AV_PACKET
+
+                        //启动 AVPacket 队列丢包
+                        avPackets.sync();
+
+#else
+                        //当前的视频帧不绘制了 , 马上释放掉
+                        releaseAVFrame(avFrame);
+
+                        //丢弃解码后的视频帧
+                        avFrames.sync();
+
+                        //终止本次循环 , 继续下一次视频帧绘制
+                        continue;
+
+
+#endif
 
                     }
 
