@@ -46,7 +46,6 @@ void dropAVPackets(queue<AVPacket *> &q){
 
         }
 
-
     }
 
 }
@@ -381,7 +380,6 @@ void VideoChannel::show() {
         //  extra_delay = repeat_pict / (2*fps)
         //  需要使用该值 , 计算一个额外的延迟时间
         //  这里按照文档中的注释 , 计算一个额外延迟时间
-        //
         double extra_delay = avFrame->repeat_pict / ( fps * 2 );
 
         //计算总的帧间隔时间 , 这是真实的间隔时间
