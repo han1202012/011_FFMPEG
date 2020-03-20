@@ -5,7 +5,7 @@
 #include "FFMPEG.h"
 
 //构造方法
-FFMPEG::FFMPEG(JavaCallHelper *callHelper, const char *dataSource) {
+FFMPEG::FFMPEG(JavaPlayerCaller *callHelper, const char *dataSource) {
 
     //拷贝一份 dataSource 字符串 , 因为该参数中传入的字符串后面可能会被回收
     //  注意 strlen 获取字符串长度 , 其中不包括最后的 '\0' 结尾 , C/C++ 字符串必须包括该 '\0' 作为结尾

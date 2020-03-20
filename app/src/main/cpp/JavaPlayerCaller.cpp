@@ -2,9 +2,9 @@
 // Created by octop on 2020/3/2.
 //
 
-#include "JavaCallHelper.h"
+#include "JavaPlayerCaller.h"
 
-JavaCallHelper::JavaCallHelper(JavaVM *vm, JNIEnv *env, jobject instance) {
+JavaPlayerCaller::JavaPlayerCaller(JavaVM *vm, JNIEnv *env, jobject instance) {
 
     /*
      * 如果在子线程调用 Java 方方法
@@ -33,7 +33,7 @@ JavaCallHelper::JavaCallHelper(JavaVM *vm, JNIEnv *env, jobject instance) {
 
 }
 
-JavaCallHelper::~JavaCallHelper() {
+JavaPlayerCaller::~JavaPlayerCaller() {
 
     //释放全局引用
     env->DeleteGlobalRef(instance);
@@ -49,7 +49,7 @@ JavaCallHelper::~JavaCallHelper() {
  * @param thread
  * @param errorCode
  */
-void JavaCallHelper::onError(int thread, int errorCode) {
+void JavaPlayerCaller::onError(int thread, int errorCode) {
 
     if(thread == 1){
 
@@ -74,7 +74,7 @@ void JavaCallHelper::onError(int thread, int errorCode) {
 
 }
 
-void JavaCallHelper::onPrepare(int thread) {
+void JavaPlayerCaller::onPrepare(int thread) {
 
     if(thread == 1){
 

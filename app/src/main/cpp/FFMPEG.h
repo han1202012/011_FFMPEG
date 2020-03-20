@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <cstring>
 #include <android/log.h>
-#include "JavaCallHelper.h"
+#include "JavaPlayerCaller.h"
 #include "AudioChannel.h"
 #include "VideoChannel.h"
 
@@ -27,7 +27,7 @@ class FFMPEG {
 public: //类中默认都是私有的, 如果共有需要指定 public
 
     //构造函数
-    FFMPEG(JavaCallHelper *callHelper, const char* dataSource);
+    FFMPEG(JavaPlayerCaller *callHelper, const char* dataSource);
 
     //析构函数
     ~FFMPEG();
@@ -64,7 +64,7 @@ private:
      */
     AVFormatContext *formatContext;
 
-    JavaCallHelper *callHelper;
+    JavaPlayerCaller *callHelper;
 
     //注意 : 声明指针变量时 , 需要给一个默认值 , 尽量减少出现错误的几率
 

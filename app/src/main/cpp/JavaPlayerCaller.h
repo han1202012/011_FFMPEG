@@ -4,20 +4,20 @@
 //       反射 Java 类 , 并调用其方法
 //
 
-#ifndef INC_011_FFMPEG_JAVACALLHELPER_H
-#define INC_011_FFMPEG_JAVACALLHELPER_H
+#ifndef INC_011_FFMPEG_JAVAPLAYERCALLER_H
+#define INC_011_FFMPEG_JAVAPLAYERCALLER_H
 
 #include <jni.h>
 
-class JavaCallHelper {
+class JavaPlayerCaller {
 
 public:
 
     //构造方法
-    JavaCallHelper(JavaVM *vm, JNIEnv *env, jobject instance);
+    JavaPlayerCaller(JavaVM *vm, JNIEnv *env, jobject instance);
 
     //析构方法
-    ~JavaCallHelper();
+    ~JavaPlayerCaller();
 
     //错误回调方法 , 通过该方法回调错误信息给 Java 层
     void onError(int thread, int errorCode);
@@ -46,4 +46,4 @@ private:
 };
 
 
-#endif //INC_011_FFMPEG_JAVACALLHELPER_H
+#endif //INC_011_FFMPEG_JAVAPLAYERCALLER_H

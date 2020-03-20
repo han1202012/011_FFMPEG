@@ -18,7 +18,7 @@ extern "C"{
 }
 
 
-#include "safe_queue.h"
+#include "SafeQueue.h"
 
 class BaseChannel {
 

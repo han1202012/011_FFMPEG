@@ -11,7 +11,7 @@ add_library( # 参数 1 : 设置生成的动态库名称
         # 参数 3 : 配置要编译的源文件
         native-lib.cpp
         FFMPEG.cpp
-        JavaCallHelper.cpp
+        JavaPlayerCaller.cpp
         AudioChannel.cpp
         VideoChannel.cpp)
 

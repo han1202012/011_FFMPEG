@@ -108,7 +108,7 @@ Java_kim_hsl_ffmpeg_Player_native_1prepare(JNIEnv *env, jobject instance, jstrin
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
 
     //创建 Java 调用类
-    JavaCallHelper * javaCallHelper = new JavaCallHelper(javaVM, env, instance);
+    JavaPlayerCaller * javaCallHelper = new JavaPlayerCaller(javaVM, env, instance);
 
     //在 FFMPEG.cpp 中声明的构造函数
     ffmpeg = new FFMPEG(javaCallHelper, dataSource);
