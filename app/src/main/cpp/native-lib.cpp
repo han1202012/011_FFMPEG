@@ -154,3 +154,15 @@ Java_kim_hsl_ffmpeg_Player_native_1set_1surface(JNIEnv *env, jobject instance, j
     pthread_mutex_unlock(&mutex);
 
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_kim_hsl_ffmpeg_Player_native_1stop(JNIEnv *env, jobject thiz) {
+
+    // 停止播放 , 在该方法中药释放相关变量 , 处理内存收尾操作
+    if(ffmpeg){
+        ffmpeg->stop();
+    }
+
+
+}

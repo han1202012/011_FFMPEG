@@ -49,6 +49,8 @@ public:
      */
     uint8_t *data;
 
+    void stop();
+
 private:
 
     /**

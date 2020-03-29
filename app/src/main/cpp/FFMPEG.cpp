@@ -45,7 +45,14 @@ void* pthread_prepare(void* args){
 
 }
 
-//实际的准备方法
+
+/**
+ * 实际的准备方法
+ *      该方法是类中定义的方法
+ *      之所以要绕一大圈最终还是调用类定义的方法是为了方便使用类中定义的各种数据
+ *      如 : AVFormatContext *formatContext , AudioChannel *audioChannel ,
+ *          VideoChannel *videoChannel 等数据
+ */
 void FFMPEG::_prepare() {
 
     /*
@@ -68,12 +75,19 @@ void FFMPEG::_prepare() {
     //                              该参数是 二级指针 , 意味着在方法中会修改该指针的指向 ,
     //                              该参数的实际作用是当做返回值用的
     //      const char *url :   视频资源地址, 文件地址 / 网络链接
+    //      AVInputFormat *fmt : 打开的媒体格式 , 一般传 NULL 即可 , FFMPEG 会自动识别格式
+    //      AVDictionary **options : 内部类似于 Map 集合 , 有 Key-Value 值
     //  返回值说明 : 返回 0 , 代表打开成功 , 否则失败
     //              失败的情况 : 文件路径错误 , 网络错误
     //int avformat_open_input(AVFormatContext **ps, const char *url,
     //                          AVInputFormat *fmt, AVDictionary **options);
-    formatContext = 0;
-    int open_result = avformat_open_input(&formatContext, dataSource, 0, 0);
+    //
+    //设置参数
+    AVDictionary *options = 0;
+    //设置超时时间 , 单位是微秒 , 这里设置 10秒 , 即 10 * 1000 毫秒 , 10 * 1000 * 1000 微秒
+    //  注意传入的是二维指针 , 二维指针 等价于 一维引用
+    av_dict_set(&options, "timeout", "10 * 1000 * 1000", 0);
+    int open_result = avformat_open_input(&formatContext, dataSource, 0, &options);
 
     //如果返回值不是 0 , 说明打开视频文件失败 , 需要将错误信息在 Java 层进行提示
     //  这里将错误码返回到 Java 层显示即可
@@ -97,6 +111,9 @@ void FFMPEG::_prepare() {
         callHelper->onError(pid, 1);
     }
 
+
+    //3 . 处理视频流 , 解析其中的数据流 , 获取流的各种参数 , 编解码器 , 等信息
+    //      为视频 音频 解码播放准备数据
 
     //formatContext->nb_streams 是 音频流 / 视频流 个数 ;
     //  循环解析 视频流 / 音频流 , 一般是两个 , 一个视频流 , 一个音频流
@@ -361,5 +378,29 @@ void FFMPEG::_start() {
 void FFMPEG::setShowFrameCallback(ShowFrameCallback callback) {
 
     this->callback = callback;
+
+}
+
+/**
+ * 停止播放
+ *  与 start 方法对应
+ */
+void FFMPEG::stop() {
+
+    //设置停止播放
+    isPlaying = 0;
+
+    //设置 音 / 视频 AVPacket * 队列工作状态
+    //  注意判空
+    if(videoChannel){
+        //开始播放 , 这里是播放入口
+        videoChannel->stop();
+    }
+
+    //注意判空 , 确保执行前已经初始化
+    if(audioChannel){
+        //开始播放音频
+        audioChannel->stop();
+    }
 
 }

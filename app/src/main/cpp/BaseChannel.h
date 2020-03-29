@@ -81,6 +81,12 @@ public:
      */
     virtual void play() = 0;
 
+    /**
+     * 停止播放
+     *      抽象方法
+     */
+    virtual void stop() = 0;
+
 
 
 

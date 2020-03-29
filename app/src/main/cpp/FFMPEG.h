@@ -48,6 +48,8 @@ public: //类中默认都是私有的, 如果共有需要指定 public
      */
     void setShowFrameCallback(ShowFrameCallback callback);
 
+    void stop();
+
 private:
 
     //保存数据源
@@ -62,7 +64,7 @@ private:
     /**
      * 编解码器 上下文环境
      */
-    AVFormatContext *formatContext;
+    AVFormatContext *formatContext = 0;
 
     JavaPlayerCaller *callHelper;
 

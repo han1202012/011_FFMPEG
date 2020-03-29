@@ -61,7 +61,7 @@ public:
     void setAudioChannel (AudioChannel *audioChannel);
 
 
-
+    void stop();
 
 private:
 

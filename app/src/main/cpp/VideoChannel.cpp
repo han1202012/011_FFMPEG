@@ -527,3 +527,7 @@ void VideoChannel::show() {
 void VideoChannel::setShowFrameCallback(ShowFrameCallback callback) {
     this->callback = callback;
 }
+
+void VideoChannel::stop() {
+
+}

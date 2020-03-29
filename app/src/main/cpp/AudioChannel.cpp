@@ -553,3 +553,7 @@ void AudioChannel::playback() {
     bqPlayerCallback(bqPlayerBufferQueue, this);
 
 }
+
+void AudioChannel::stop() {
+
+}

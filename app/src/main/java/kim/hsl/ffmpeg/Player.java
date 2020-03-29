@@ -159,8 +159,26 @@ public class Player implements SurfaceHolder.Callback {
 
     }
 
+    /**
+     * 播放器准备
+     * @param dataSource
+     */
     native void native_prepare(String dataSource);
+
+    /**
+     * 播放器开始播放
+     */
     native void native_start();
+
+    /**
+     * 播放器停止播放
+     */
+    native void native_stop();
+
+    /**
+     * 将 Surface 画布传递到 Native 层
+     * @param surface
+     */
     native void native_set_surface(Surface surface);
 
 
