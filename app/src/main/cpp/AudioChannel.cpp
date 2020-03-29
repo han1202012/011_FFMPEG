@@ -562,7 +562,10 @@ void AudioChannel::stop() {
     avFrames.setWork(0);
     avPackets.setWork(0);
 
+    //等待解码操作执行完毕
+    pthread_join(pid_decode, 0);
 
-
+    //等待音频播放线程执行完毕
+    pthread_join(pid_playback, 0);
 
 }

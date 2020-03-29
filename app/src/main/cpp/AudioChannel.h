@@ -130,15 +130,6 @@ private:
      */
     SwrContext *swrContext = 0;
 
-
-    /*SLEffectSendItf bqPlayerEffectSend;
-    SLMuteSoloItf bqPlayerMuteSolo;
-    SLVolumeItf bqPlayerVolume;
-    SLmilliHertz bqPlayerSampleRate = 0;
-    jint   bqPlayerBufSize = 0;
-    short *resampleBuf = NULL;*/
-
-
 };
 
 

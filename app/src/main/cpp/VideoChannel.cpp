@@ -518,6 +518,13 @@ void VideoChannel::show() {
 
     //释放绘制完毕的 AVFrame * 元素 , 传入的参数是引用类型的
     releaseAVFrame(avFrame);
+
+    //设置播放状态 0
+    isPlaying = 0;
+
+    //释放图像格式转换上下文对象
+    sws_freeContext(swsContext);
+    swsContext = 0
 }
 
 /**
@@ -531,5 +538,18 @@ void VideoChannel::setShowFrameCallback(ShowFrameCallback callback) {
 void VideoChannel::stop() {
 
     //对照 start 方法中的操作
+
+    //设置播放状态 0
+    isPlaying = 0;
+
+    //将两个线程安全队列的工作状态设置成 0 , 即不工作
+    avFrames.setWork(0);
+    avPackets.setWork(0);
+
+    //等待解码操作执行完毕
+    pthread_join(pid_decode, 0);
+
+    //等待图像绘制线程执行完毕
+    pthread_join(pid_show, 0);
 
 }
