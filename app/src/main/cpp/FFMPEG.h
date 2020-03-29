@@ -50,7 +50,7 @@ public: //类中默认都是私有的, 如果共有需要指定 public
 
     void stop();
 
-private:
+public:
 
     //保存数据源
     char* dataSource;
@@ -60,6 +60,13 @@ private:
 
     //播放子线程 ID
     pthread_t pid_play;
+
+    /**
+     * 停止子线程 ID
+     */
+    pthread_t pid_stop;
+
+
 
     /**
      * 编解码器 上下文环境

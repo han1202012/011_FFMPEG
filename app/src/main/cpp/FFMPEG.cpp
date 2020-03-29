@@ -382,6 +382,47 @@ void FFMPEG::setShowFrameCallback(ShowFrameCallback callback) {
 }
 
 /**
+ * 线程方法 , 在该线程中停止播放
+ * @param args
+ * @return
+ */
+void *thread_stop(void *args){
+
+    //获取参数 , 即 FFMPEG 类对象
+    FFMPEG *ffmpeg = static_cast<FFMPEG *>(args);
+
+    //阻塞等待 pid 准备线程执行完毕 , prepare 准备完毕后执行下面的操作
+    pthread_join(ffmpeg->pid, 0);
+
+    //阻塞等待 pid_play start 开始播放 线程执行完毕
+    pthread_join(ffmpeg->pid_play, 0);
+
+    //释放 编解码器 上下文对象 AVFormatContext *formatContext
+    if(ffmpeg->formatContext) {
+        // 先关闭读取 , 再释放上下文对象
+        //      关闭网络读取 或 本地的文件输入流
+        avformat_close_input(&ffmpeg->formatContext);
+        avformat_free_context(ffmpeg->formatContext);
+        ffmpeg->formatContext = 0;
+    }
+
+    //  注意判空
+    /*if(videoChannel){
+        //视频停止播放
+        videoChannel->stop();
+    }
+
+    //注意判空 , 确保执行前已经初始化
+    if(audioChannel){
+        //音频停止播放
+        audioChannel->stop();
+    }*/
+
+
+}
+
+
+/**
  * 停止播放
  *  与 start 方法对应
  */
@@ -390,17 +431,11 @@ void FFMPEG::stop() {
     //设置停止播放
     isPlaying = 0;
 
-    //设置 音 / 视频 AVPacket * 队列工作状态
-    //  注意判空
-    if(videoChannel){
-        //开始播放 , 这里是播放入口
-        videoChannel->stop();
-    }
-
-    //注意判空 , 确保执行前已经初始化
-    if(audioChannel){
-        //开始播放音频
-        audioChannel->stop();
-    }
+    /*
+        必须保证 prepare 执行完毕才能释放相关操作
+        需要阻塞等待 prepare 执行完毕 , 但是该 stop 函数是从主线程调用的
+        如果阻塞 , 会直接将主线程阻塞住 , 因此需要创建一个线程 , 进行相关变量的释放操作
+     */
+    pthread_create(&pid_stop, 0, thread_stop, this);
 
 }
