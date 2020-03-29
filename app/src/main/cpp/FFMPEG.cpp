@@ -355,9 +355,21 @@ void FFMPEG::_start() {
         }else if(read_frame_result == AVERROR_EOF){
 
             //读取完毕 , 但是当前还没有播放完毕
+            if(     audioChannel->avPackets.empty() &&
+                    audioChannel->avFrames.empty() &&
+                    videoChannel->avPackets.empty() &&
+                    videoChannel->avFrames.empty()  ){
+
+                //只有 音频 和 视频 的所有 AVPacket 和 AVFrame 待处理队列清空了 ,
+                //      才说明播放完毕 , 此时才能退出循环
+                break;
+
+            }
 
 
         }else{
+
+            //这里 av_read_frame 读取数据帧出现错误 ,  肯定是打开文件失败 , 直接退出即可
 
             callHelper->onError(pid, 5);
             __android_log_print(ANDROID_LOG_ERROR , "FFMPEG" , "打开 编解码器 失败");
@@ -366,10 +378,11 @@ void FFMPEG::_start() {
         }
 
         
-    }
+    }//while (isPlaying)
 
+    audioChannel->stop();
+    videoChannel->stop();
 }
-
 /**
  * 将图像绘制回调函数从 native-lib.cpp 中传递给 VideoChannel.h
  *
@@ -387,6 +400,8 @@ void FFMPEG::setShowFrameCallback(ShowFrameCallback callback) {
  * @return
  */
 void *thread_stop(void *args){
+
+    //对照 FFMPEG 中的start 方法进行相关变量的释放
 
     //获取参数 , 即 FFMPEG 类对象
     FFMPEG *ffmpeg = static_cast<FFMPEG *>(args);

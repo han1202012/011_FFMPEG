@@ -530,4 +530,6 @@ void VideoChannel::setShowFrameCallback(ShowFrameCallback callback) {
 
 void VideoChannel::stop() {
 
+    //对照 start 方法中的操作
+
 }

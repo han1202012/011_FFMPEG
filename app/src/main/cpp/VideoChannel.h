@@ -61,6 +61,9 @@ public:
     void setAudioChannel (AudioChannel *audioChannel);
 
 
+    /**
+     * 停止 视频 播放操作
+     */
     void stop();
 
 private:

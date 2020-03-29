@@ -555,5 +555,14 @@ void AudioChannel::playback() {
 }
 
 void AudioChannel::stop() {
+    //设置播放状态 0
+    isPlaying = 0;
+
+    //将两个线程安全队列的工作状态设置成 0 , 即不工作
+    avFrames.setWork(0);
+    avPackets.setWork(0);
+
+
+
 
 }
