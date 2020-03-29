@@ -53,14 +53,18 @@ public:
      * 向线程安全队列中添加元素
      * @param new_value
      */
-    void push(const T new_value) {
+    void push(T new_value) {
 
         pthread_mutex_lock(&mutex);
         if (work) {
             q.push(new_value);
             pthread_cond_signal(&cond);
             pthread_mutex_unlock(&mutex);
+        }else{
+            //如果没有加入到队列中 , 那么释放该值
+            releaseHandle(new_value);
         }
+
         pthread_mutex_unlock(&mutex);
 
     }

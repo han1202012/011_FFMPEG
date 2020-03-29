@@ -27,8 +27,6 @@ FFMPEG::~FFMPEG() {
 
     //释放字符串成员变量 , 防止 dataSource 指向的内存出现泄漏
     delete dataSource;
-    delete callHelper;
-
 }
 
 //prepare 方法调用的子线程执行内容
@@ -86,8 +84,9 @@ void FFMPEG::_prepare() {
     AVDictionary *options = 0;
     //设置超时时间 , 单位是微秒 , 这里设置 10秒 , 即 10 * 1000 毫秒 , 10 * 1000 * 1000 微秒
     //  注意传入的是二维指针 , 二维指针 等价于 一维引用
-    av_dict_set(&options, "timeout", "10 * 1000 * 1000", 0);
-    int open_result = avformat_open_input(&formatContext, dataSource, 0, &options);
+    av_dict_set(&options, "timeout", "10000000", 0);
+    int open_result = avformat_open_input(&formatContext, dataSource, 0, 0);
+    av_dict_free(&options);
 
     //如果返回值不是 0 , 说明打开视频文件失败 , 需要将错误信息在 Java 层进行提示
     //  这里将错误码返回到 Java 层显示即可
@@ -294,6 +293,18 @@ void FFMPEG::_start() {
     //      如果当前是正在播放状态 , 那么不停的读取数据包 , 并解码
     while (isPlaying){
 
+        //如果读取本地文件 , 可能一次性读取很多包 , 一万包 , 直接 OOM
+        //  如果未处理的包太多 , 休眠一会 , 再继续读取
+        if(audioChannel && audioChannel->avPackets.size() > 200){
+            av_usleep(10 * 1000);
+            continue;
+        }
+        if(videoChannel && videoChannel->avPackets.size() > 200){
+            av_usleep(10 * 1000);
+            continue;
+        }
+
+
         //读取数据包
         // AVPacket 存放编码后的音视频数据的 , 获取该数据包后 , 需要对该数据进行解码 , 解码后将数据存放在 AVFrame 中
         // AVPacket 是编码后的数据 , AVFrame 是编码前的数据
@@ -380,6 +391,7 @@ void FFMPEG::_start() {
         
     }//while (isPlaying)
 
+    //停止操作的核心
     audioChannel->stop();
     videoChannel->stop();
 }
@@ -412,6 +424,10 @@ void *thread_stop(void *args){
     //阻塞等待 pid_play start 开始播放 线程执行完毕
     pthread_join(ffmpeg->pid_play, 0);
 
+    //释放音视频解码播放器
+    delete ffmpeg->videoChannel;
+    delete ffmpeg->audioChannel;
+
     //释放 编解码器 上下文对象 AVFormatContext *formatContext
     if(ffmpeg->formatContext) {
         // 先关闭读取 , 再释放上下文对象
@@ -421,16 +437,19 @@ void *thread_stop(void *args){
         ffmpeg->formatContext = 0;
     }
 
+    //释放 Native 层播放器对象
+    delete ffmpeg;
+
     //  注意判空
-    /*if(videoChannel){
+    /*if(ffmpeg->videoChannel){
         //视频停止播放
-        videoChannel->stop();
+        ffmpeg->videoChannel->stop();
     }
 
     //注意判空 , 确保执行前已经初始化
-    if(audioChannel){
+    if(ffmpeg->audioChannel){
         //音频停止播放
-        audioChannel->stop();
+        ffmpeg->audioChannel->stop();
     }*/
 
 

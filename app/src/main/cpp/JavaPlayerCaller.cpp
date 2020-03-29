@@ -33,9 +33,14 @@ JavaPlayerCaller::JavaPlayerCaller(JavaVM *vm, JNIEnv *env, jobject instance) {
 
 }
 
+/**
+ * 析构方法
+ */
 JavaPlayerCaller::~JavaPlayerCaller() {
 
     //释放全局引用
+    //注意线程 : 该 env 是主线程的 env
+    //  如果在子线程中调用该方法 , 会导致崩溃
     env->DeleteGlobalRef(instance);
 
 }

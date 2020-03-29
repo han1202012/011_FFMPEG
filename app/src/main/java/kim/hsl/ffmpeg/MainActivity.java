@@ -83,4 +83,12 @@ public class MainActivity extends Activity {
     public void play(View view) {
         player.prepare();
     }
+
+    /**
+     * 停止播放
+     * @param view
+     */
+    public void stop(View view) {
+        player.stop();
+    }
 }

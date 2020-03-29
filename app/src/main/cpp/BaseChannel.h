@@ -52,6 +52,12 @@ public:
         //释放 SafeQueue<AVFrame *> avFrames 安全队列资源
         avFrames.clear();
 
+        if(avCodecContext){
+            avcodec_close(avCodecContext);
+            avcodec_free_context(&avCodecContext);
+            avCodecContext = 0;
+        }
+
     }
 
     /**

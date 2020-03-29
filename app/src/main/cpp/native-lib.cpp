@@ -20,6 +20,11 @@ ANativeWindow * aNativeWindow;
  */
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/**
+ * Java 类回调
+ */
+JavaPlayerCaller * javaCallHelper;
+
 //JNI_OnLoad 中获取的 Java 虚拟机对象放在这里
 JavaVM *javaVM;
 int JNI_OnLoad(JavaVM *vm, void *r){
@@ -108,7 +113,7 @@ Java_kim_hsl_ffmpeg_Player_native_1prepare(JNIEnv *env, jobject instance, jstrin
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
 
     //创建 Java 调用类
-    JavaPlayerCaller * javaCallHelper = new JavaPlayerCaller(javaVM, env, instance);
+    javaCallHelper = new JavaPlayerCaller(javaVM, env, instance);
 
     //在 FFMPEG.cpp 中声明的构造函数
     ffmpeg = new FFMPEG(javaCallHelper, dataSource);
@@ -129,7 +134,9 @@ JNIEXPORT void JNICALL
 Java_kim_hsl_ffmpeg_Player_native_1start(JNIEnv *env, jobject instance) {
 
     //调用本地 ffmpeg 播放器的 start() 方法
-    ffmpeg->start();
+    if(ffmpeg) {
+        ffmpeg->start();
+    }
 }
 
 extern "C"
@@ -164,5 +171,29 @@ Java_kim_hsl_ffmpeg_Player_native_1stop(JNIEnv *env, jobject thiz) {
         ffmpeg->stop();
     }
 
+    if(javaCallHelper){
+        delete javaCallHelper;
+        javaCallHelper = 0;
+    }
+
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_kim_hsl_ffmpeg_Player_native_1release(JNIEnv *env, jobject thiz) {
+
+    //释放 aNativeWindow
+
+    //加同步锁
+    pthread_mutex_lock(&mutex);
+
+    //释放原来的 ANativeWindow
+    if(aNativeWindow){
+        ANativeWindow_release(aNativeWindow);
+        aNativeWindow = 0;
+    }
+    //解除同步锁
+    pthread_mutex_unlock(&mutex);
 
 }

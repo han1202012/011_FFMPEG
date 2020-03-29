@@ -59,7 +59,7 @@ public class Player implements SurfaceHolder.Callback {
      * 停止播放
      */
     public void stop(){
-
+        native_stop();
     }
 
 
@@ -83,6 +83,9 @@ public class Player implements SurfaceHolder.Callback {
 
         //防止内存泄漏 , 移除监听
         surfaceHolder.removeCallback(this);
+
+        //释放资源
+        native_release();
 
     }
 
@@ -128,6 +131,12 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     public void setSurfaceView(SurfaceView surfaceView) {
+
+        //防止注册多次
+        if(this.surfaceHolder != null){
+            this.surfaceHolder.removeCallback(this);
+        }
+
         this.surfaceView = surfaceView;
 
         //监听获取画布
@@ -174,6 +183,11 @@ public class Player implements SurfaceHolder.Callback {
      * 播放器停止播放
      */
     native void native_stop();
+
+    /**
+     * 释放资源
+     */
+    native void native_release();
 
     /**
      * 将 Surface 画布传递到 Native 层

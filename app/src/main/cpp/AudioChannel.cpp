@@ -304,6 +304,9 @@ int AudioChannel::getPCM() {
     //  其中 av_q2d 是将 AVRational 转为 double 类型
     audio_pts_second = avFrame->pts * av_q2d(time_base);
 
+    //释放重采样前的音频
+    releaseAVFrame(avFrame);
+
     return pcm_data_bit_size;
 }
 
@@ -567,5 +570,47 @@ void AudioChannel::stop() {
 
     //等待音频播放线程执行完毕
     pthread_join(pid_playback, 0);
+
+    //释放音频重采样上下文
+    if(swrContext){
+        swr_free(&swrContext);
+        swrContext = 0;
+    }
+
+
+    //释放 OpenSL ES 相关对象和接口
+    //  注意要严格按照顺序释放 , 不要打乱顺序
+    //  释放顺序是按照初始化顺序的反向顺序释放的 : 如最先创建引擎 , 然后混音器 , 最后创建播放器
+    //  释放时 : 先释放播放器 , 再释放混音器 , 最后释放引擎
+
+    //释放播放器
+    if(bqPlayerObject){
+        (*bqPlayerObject)->Destroy(bqPlayerObject);
+        bqPlayerObject = 0;
+
+        //播放器相关的接口都设置成 0 即可
+        bqPlayerPlay = 0;
+        bqPlayerBufferQueue = 0;
+    }
+
+    //释放混音器
+    if(outputMixObject){
+        (*outputMixObject)->Destroy(outputMixObject);
+        outputMixObject = 0;
+    }
+
+
+    //释放 OpenSL ES 引擎
+    if(engineObject){
+        //释放引擎
+        (*engineObject)->Destroy(engineObject);
+        engineObject = 0;
+        //释放引擎接口
+        engineEngine = 0;
+    }
+
+
+
+
 
 }

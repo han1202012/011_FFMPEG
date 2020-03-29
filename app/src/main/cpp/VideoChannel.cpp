@@ -524,7 +524,7 @@ void VideoChannel::show() {
 
     //释放图像格式转换上下文对象
     sws_freeContext(swsContext);
-    swsContext = 0
+    //swsContext = 0;
 }
 
 /**
