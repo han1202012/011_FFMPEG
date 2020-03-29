@@ -438,21 +438,12 @@ void *thread_stop(void *args){
     }
 
     //释放 Native 层播放器对象
-    delete ffmpeg;
-
-    //  注意判空
-    /*if(ffmpeg->videoChannel){
-        //视频停止播放
-        ffmpeg->videoChannel->stop();
+    if(ffmpeg) {
+        delete ffmpeg;
     }
 
-    //注意判空 , 确保执行前已经初始化
-    if(ffmpeg->audioChannel){
-        //音频停止播放
-        ffmpeg->audioChannel->stop();
-    }*/
-
-
+    //线程必须有返回值 , 这个问题浪费了 一个半小时 , 找到播放停止原因了 , 在这里记录下
+    return 0;
 }
 
 
