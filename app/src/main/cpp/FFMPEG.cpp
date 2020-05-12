@@ -21,12 +21,16 @@ FFMPEG::FFMPEG(JavaPlayerCaller *callHelper, const char *dataSource) {
     //Java 反射调用类
     this->callHelper = callHelper;
 
+    pthread_mutex_init(&seek_mutex, 0);
+
 }
 
 FFMPEG::~FFMPEG() {
 
     //释放字符串成员变量 , 防止 dataSource 指向的内存出现泄漏
     delete dataSource;
+
+    pthread_mutex_destroy(&seek_mutex);
 }
 
 //prepare 方法调用的子线程执行内容
@@ -310,6 +314,7 @@ void FFMPEG::_start() {
             continue;
         }
 
+        pthread_mutex_lock(&seek_mutex);
 
         //读取数据包
         // AVPacket 存放编码后的音视频数据的 , 获取该数据包后 , 需要对该数据进行解码 , 解码后将数据存放在 AVFrame 中
@@ -335,6 +340,8 @@ void FFMPEG::_start() {
             返回值 0 说明读取成功 , 小于 0 说明读取失败 , 或者 读取完毕
          */
         int read_frame_result = av_read_frame(formatContext, avPacket);
+
+        pthread_mutex_unlock(&seek_mutex);
 
         /*
             返回值处理 :
@@ -469,4 +476,46 @@ void FFMPEG::stop() {
      */
     pthread_create(&pid_stop, 0, thread_stop, this);
 
+}
+
+
+void FFMPEG::seek(int progress) {
+    //进度值必须符合要求
+    if (progress < 0 || progress >= duration ) {
+        return;
+    }
+
+    //必须正在进行播放
+    if (!audioChannel && !videoChannel) {
+        return;
+    }
+
+    //上下文环境已经初始化好了
+    if (!formatContext) {
+        return;
+    }
+
+    //这个操作必须与播放时取数据互斥
+    pthread_mutex_lock(&seek_mutex);
+
+    //单位是 微妙
+    int64_t seek = progress * 1000000;
+
+    // 跳转核心方法 , 跳转到距离时间戳最近的关键帧位置
+    av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
+
+    // 丢弃音视频的 编码包 与 解码包
+    if (audioChannel) {
+        audioChannel->stop();
+        audioChannel->clear();
+        audioChannel->startWork();
+    }
+    if (videoChannel) {
+        videoChannel->stopWork();
+        videoChannel->clear();
+        videoChannel->startWork();
+    }
+
+    //解锁
+    pthread_mutex_unlock(&seek_mutex);
 }

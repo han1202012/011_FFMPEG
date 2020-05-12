@@ -51,6 +51,12 @@ public: //类中默认都是私有的, 如果共有需要指定 public
 
     void stop();
 
+    /**
+     * 跳转播放
+     * @param progress
+     */
+    void seek(int progress);
+
     int getDuration() {
         return duration;
     }
@@ -72,6 +78,10 @@ public:
     pthread_t pid_stop;
 
 
+    /**
+     * 进度条跳转的互斥锁
+     */
+    pthread_mutex_t seek_mutex;
 
     /**
      * 编解码器 上下文环境

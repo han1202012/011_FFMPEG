@@ -208,6 +208,19 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     /**
+     * 主界面调用播放器跳转播放
+     * @param progress
+     */
+    public void seek(final int progress) {
+        new Thread() {
+            @Override
+            public void run() {
+                native_seek(progress);
+            }
+        }.start();
+    }
+
+    /**
      * 播放器准备
      * @param dataSource
      */
@@ -239,5 +252,11 @@ public class Player implements SurfaceHolder.Callback {
      * @return
      */
     private native int native_getDuration();
+
+    /**
+     * Native 层开始
+     * @param progress
+     */
+    private native void native_seek(int progress);
 
 }

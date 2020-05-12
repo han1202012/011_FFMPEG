@@ -304,7 +304,7 @@ int AudioChannel::getPCM() {
     //  其中 av_q2d 是将 AVRational 转为 double 类型
     audio_pts_second = avFrame->pts * av_q2d(time_base);
 
-    //释放重采样前的音频
+    //释放重采样前的音频帧
     releaseAVFrame(avFrame);
 
     return pcm_data_bit_size;
@@ -572,7 +572,7 @@ void AudioChannel::stop() {
     pthread_join(pid_playback, 0);
 
     //释放音频重采样上下文
-    if(swrContext){
+    if (swrContext) {
         swr_free(&swrContext);
         swrContext = 0;
     }
@@ -584,7 +584,7 @@ void AudioChannel::stop() {
     //  释放时 : 先释放播放器 , 再释放混音器 , 最后释放引擎
 
     //释放播放器
-    if(bqPlayerObject){
+    if (bqPlayerObject) {
         (*bqPlayerObject)->Destroy(bqPlayerObject);
         bqPlayerObject = 0;
 
@@ -594,23 +594,23 @@ void AudioChannel::stop() {
     }
 
     //释放混音器
-    if(outputMixObject){
+    if (outputMixObject) {
         (*outputMixObject)->Destroy(outputMixObject);
         outputMixObject = 0;
     }
 
 
     //释放 OpenSL ES 引擎
-    if(engineObject){
+    if (engineObject) {
         //释放引擎
         (*engineObject)->Destroy(engineObject);
         engineObject = 0;
         //释放引擎接口
         engineEngine = 0;
     }
-
-
-
-
-
 }
+
+
+
+
+

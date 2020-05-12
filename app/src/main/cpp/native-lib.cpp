@@ -203,4 +203,10 @@ Java_kim_hsl_ffmpeg_Player_native_1getDuration(JNIEnv *env, jobject thiz) {
         return ffmpeg->getDuration();
     }
     return 0;
+}extern "C"
+JNIEXPORT void JNICALL
+Java_kim_hsl_ffmpeg_Player_native_1seek(JNIEnv *env, jobject thiz, jint progress) {
+    if (ffmpeg){
+        ffmpeg->seek(progress);
+    }
 }

@@ -179,8 +179,27 @@ public class MainActivity extends Activity {
                 });
             }
         });
-    }
 
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                //此处跳转播放
+                int progress = player.getDuration() * seekBar.getProgress() / 100;
+                //进度调整
+                player.seek(progress);
+            }
+        });
+    }
     /**
      * 播放
      * @param view

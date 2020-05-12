@@ -79,6 +79,20 @@ public:
         av_frame_free(&avFrame);
     }
 
+    void clear() {
+        avPackets.clear();
+        avFrames.clear();
+    }
+
+    void stopWork() {
+        avPackets.setWork(0);
+        avFrames.setWork(0);
+    }
+
+    void startWork() {
+        avPackets.setWork(1);
+        avFrames.setWork(1);
+    }
 
     /**
      * 开始播放
