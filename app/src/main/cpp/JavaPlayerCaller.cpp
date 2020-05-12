@@ -30,6 +30,9 @@ JavaPlayerCaller::JavaPlayerCaller(JavaVM *vm, JNIEnv *env, jobject instance) {
     //Java 中对应的 public void onPrepare()
     this->onPrepareId = env->GetMethodID(clazz, "onPrepare", "()V");
 
+    //Java 中对应的 public void onProgress()
+    this->onProgressId = env->GetMethodID(clazz, "onProgress", "(I)V");
+
 
 }
 
@@ -102,4 +105,33 @@ void JavaPlayerCaller::onPrepare(int thread) {
 
     }
 
+}
+
+
+/**
+ * 回调 Java 的进度条更新方法
+ * @param thread
+ * @param progress
+ */
+void JavaPlayerCaller::onProgress(int thread, int progress) {
+    if(thread == 1){
+
+        //主线程 : 可以直接使用 JNIEnv * 指针
+        this->env->CallVoidMethod(instance, onProgressId, progress);
+
+    }else{
+
+        //子线程 : 需要通过 JavaVM * 获取该子线程的 JNIEnv *
+        JNIEnv *env_thread;
+
+        //Java 虚拟机 调用附加线程的方法 , 可以获取当前线程的 JNIEnv* 指针
+        vm->AttachCurrentThread(&env_thread, 0);
+
+        //调用 Java 方法
+        env_thread->CallVoidMethod(instance, onProgressId, progress);
+
+        //解除线程附加
+        vm->DetachCurrentThread();
+
+    }
 }

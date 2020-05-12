@@ -19,6 +19,7 @@ extern "C"{
 
 
 #include "SafeQueue.h"
+#include "JavaPlayerCaller.h"
 
 class BaseChannel {
 
@@ -94,9 +95,6 @@ public:
     virtual void stop() = 0;
 
 
-
-
-
     /**
      * 存储当前解析类型对应的 音视频流 索引序号
      */
@@ -137,8 +135,6 @@ public:
      * 单位 : 秒
      */
     double audio_pts_second;
-
-
 };
 
 

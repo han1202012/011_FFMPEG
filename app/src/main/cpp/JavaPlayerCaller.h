@@ -25,6 +25,9 @@ public:
     //准备回调方法
     void onPrepare(int thread);
 
+    //进度条回调
+    void onProgress(int thread, int progress);
+
 private:
 
     /*
@@ -42,6 +45,9 @@ private:
 
     //onPrepare 方法对应的 方法 ID
     jmethodID onPrepareId;
+
+    //onProgress 方法对应的 方法 ID
+    jmethodID onProgressId;
 
 };
 

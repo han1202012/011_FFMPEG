@@ -52,6 +52,8 @@ public:
      */
     void setShowFrameCallback(ShowFrameCallback callback);
 
+    void setJavaPlayerCaller(JavaPlayerCaller *javaPlayerCaller);
+
 
     /**
      * 获取音频对象
@@ -87,6 +89,11 @@ private:
      * 图像绘制回调函数 函数指针
      */
     ShowFrameCallback callback;
+
+    /**
+     *  Java 播放器回调接口
+     */
+    JavaPlayerCaller* javaPlayerCaller;
 
     /**
      * 视频帧率 , 播放过程中会动态改变

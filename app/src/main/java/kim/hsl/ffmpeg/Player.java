@@ -37,6 +37,11 @@ public class Player implements SurfaceHolder.Callback {
      */
     private OnPrepareListener onPrepareListener;
 
+    /**
+     * 进度条回调接口
+     */
+    private OnProgressListener onProgressListener;
+
     public String getDataSource() {
         return dataSource;
     }
@@ -111,6 +116,17 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     /**
+     * C++ 中 进度更新 时回调该方法
+     *
+     * @param progress
+     */
+    public void onProgress(int progress) {
+        if (null != onProgressListener) {
+            onProgressListener.onProgress(progress);
+        }
+    }
+
+    /**
      * 设置准备回调接口
      * @param onPrepareListener
      */
@@ -119,10 +135,25 @@ public class Player implements SurfaceHolder.Callback {
     }
 
     /**
+     * 设置进度条回调接口
+     * @param onProgressListener
+     */
+    public void setOnProgressListener(OnProgressListener onProgressListener) {
+        this.onProgressListener = onProgressListener;
+    }
+
+    /**
      * 定义准备回调接口
      */
     public interface OnPrepareListener{
         void onPrepare();
+    }
+
+    /**
+     * 定义进度条回调接口
+     */
+    public interface OnProgressListener {
+        void onProgress(int progress);
     }
 
 
@@ -164,8 +195,16 @@ public class Player implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         //画布销毁
+    }
 
-
+    /**
+     * 获取视频的播放时长
+     * 如果是直播流 , 获取的时间是 0
+     * 如果是视频文件 , 获取的是大于 0 的时间
+     * @return
+     */
+    public int getDuration(){
+        return native_getDuration();
     }
 
     /**
@@ -195,5 +234,10 @@ public class Player implements SurfaceHolder.Callback {
      */
     native void native_set_surface(Surface surface);
 
+    /**
+     * 获取视频长度
+     * @return
+     */
+    private native int native_getDuration();
 
 }

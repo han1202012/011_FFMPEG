@@ -498,6 +498,10 @@ void VideoChannel::show() {
 
         }
 
+        //回调显示进度条
+        if(javaPlayerCaller){
+            javaPlayerCaller->onProgress(2, vedio_best_effort_timestamp_second);
+        }
 
 
         //调用回调函数 , 绘制 解码后的图像
@@ -535,6 +539,10 @@ void VideoChannel::setShowFrameCallback(ShowFrameCallback callback) {
     this->callback = callback;
 }
 
+void VideoChannel::setJavaPlayerCaller(JavaPlayerCaller *javaPlayerCaller) {
+    this->javaPlayerCaller = javaPlayerCaller;
+}
+
 void VideoChannel::stop() {
 
     //对照 start 方法中的操作
@@ -551,5 +559,4 @@ void VideoChannel::stop() {
 
     //等待图像绘制线程执行完毕
     pthread_join(pid_show, 0);
-
 }

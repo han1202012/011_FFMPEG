@@ -110,6 +110,9 @@ void FFMPEG::_prepare() {
         callHelper->onError(pid, 1);
     }
 
+    //获取视频时长, 单位是微秒 , 除以 1000000 是秒时间
+    duration = formatContext->duration / 1000000;
+
 
     //3 . 处理视频流 , 解析其中的数据流 , 获取流的各种参数 , 编解码器 , 等信息
     //      为视频 音频 解码播放准备数据
@@ -206,6 +209,9 @@ void FFMPEG::_prepare() {
 
             //视频
             videoChannel = new VideoChannel(i, avCodecContext, time_base, fps);
+
+            //设置 Java 回调接口, 需要在进度条回调时使用
+            videoChannel->setJavaPlayerCaller(callHelper);
 
             //设置视频回调函数
             videoChannel->setShowFrameCallback(callback);

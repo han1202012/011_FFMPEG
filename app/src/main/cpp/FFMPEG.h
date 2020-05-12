@@ -51,6 +51,10 @@ public: //类中默认都是私有的, 如果共有需要指定 public
 
     void stop();
 
+    int getDuration() {
+        return duration;
+    }
+
 public:
 
     //保存数据源
@@ -77,6 +81,9 @@ public:
     JavaPlayerCaller *callHelper;
 
     //注意 : 声明指针变量时 , 需要给一个默认值 , 尽量减少出现错误的几率
+
+    //视频的长度
+    int duration;
 
     //解析音频流
     AudioChannel *audioChannel = 0;

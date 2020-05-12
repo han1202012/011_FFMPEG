@@ -196,4 +196,11 @@ Java_kim_hsl_ffmpeg_Player_native_1release(JNIEnv *env, jobject thiz) {
     //解除同步锁
     pthread_mutex_unlock(&mutex);
 
+}extern "C"
+JNIEXPORT jint JNICALL
+Java_kim_hsl_ffmpeg_Player_native_1getDuration(JNIEnv *env, jobject thiz) {
+    if (ffmpeg) {
+        return ffmpeg->getDuration();
+    }
+    return 0;
 }
