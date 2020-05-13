@@ -420,10 +420,24 @@ void VideoChannel::show() {
                     //视频快处理方案 : 增加休眠时间
 
                     //休眠 , 单位微秒 , 控制 FPS 帧率
-                    av_usleep(microseconds_total_frame_delay + microseconds_delta);
+                    // 如果拖动进度条向前走 50秒 , 那么此处会休眠 50秒 , 不能适用该逻辑
+                    //av_usleep(microseconds_total_frame_delay + microseconds_delta);
+
+
+                    if (second_delta > 1) {
+                        //差的太久了， 那只能慢慢赶 不然就是卡好久
+                        av_usleep(microseconds_total_frame_delay * 2);
+                    } else {
+                        //差的不多，尝试一次赶上去
+                        av_usleep(microseconds_total_frame_delay + microseconds_delta);
+                    }
+
 
                 }else if(second_delta < 0){
 
+                    if(fabs(second_delta > 1)){
+                        //特殊情况
+                    }else
                     //视频慢处理方案 :
                     //  ① 方案 1 : 减小休眠时间 , 甚至不休眠
                     //  ② 方案 2 : 视频帧积压太多了 , 这里需要将视频帧丢弃 ( 比方案 1 极端 )

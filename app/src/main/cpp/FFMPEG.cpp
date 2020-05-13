@@ -506,7 +506,7 @@ void FFMPEG::seek(int progress) {
 
     // 丢弃音视频的 编码包 与 解码包
     if (audioChannel) {
-        audioChannel->stop();
+        audioChannel->stopWork();
         audioChannel->clear();
         audioChannel->startWork();
     }
