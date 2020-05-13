@@ -425,10 +425,10 @@ void VideoChannel::show() {
 
 
                     if (second_delta > 1) {
-                        //差的太久了， 那只能慢慢赶 不然就是卡好久
+                        //不能一次休眠太长时间 , 作短时间休眠 , 逐渐赶上进度
                         av_usleep(microseconds_total_frame_delay * 2);
                     } else {
-                        //差的不多，尝试一次赶上去
+                        // 如果差距在 1 秒之内 , 那么一次性赶上 音视频 进度
                         av_usleep(microseconds_total_frame_delay + microseconds_delta);
                     }
 

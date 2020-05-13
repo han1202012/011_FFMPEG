@@ -506,14 +506,24 @@ void FFMPEG::seek(int progress) {
 
     // 丢弃音视频的 编码包 与 解码包
     if (audioChannel) {
-        audioChannel->stopWork();
-        audioChannel->clear();
-        audioChannel->startWork();
+        audioChannel->avFrames.setWork(0);
+        audioChannel->avPackets.setWork(0);
+
+        audioChannel->avFrames.clear();
+        audioChannel->avPackets.clear();
+
+        audioChannel->avFrames.setWork(1);
+        audioChannel->avPackets.setWork(1);
     }
     if (videoChannel) {
-        videoChannel->stopWork();
-        videoChannel->clear();
-        videoChannel->startWork();
+        videoChannel->avFrames.setWork(0);
+        videoChannel->avPackets.setWork(0);
+
+        videoChannel->avFrames.clear();
+        videoChannel->avPackets.clear();
+
+        videoChannel->avFrames.setWork(1);
+        videoChannel->avPackets.setWork(1);
     }
 
     //解锁
