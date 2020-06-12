@@ -498,8 +498,8 @@ void FFMPEG::seek(int progress) {
     //这个操作必须与播放时取数据互斥
     pthread_mutex_lock(&seek_mutex);
 
-    //单位是 微妙
-    int64_t seek = progress * 1000000;
+    //将秒单位 转为 微秒单位
+    int64_t seek = progress * 1000 * 1000;
 
     // 跳转核心方法 , 跳转到距离时间戳最近的关键帧位置
     av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
